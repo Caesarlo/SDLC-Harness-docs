@@ -1,0 +1,118 @@
+---
+title: "配置参考"
+description: "配置协作模式、默认 owner、ADR 要求和 feature list 治理规则。"
+icon: "sliders"
+---
+
+SDLC Harness 的配置分为项目配置和功能状态规则。
+
+## `harness.config.json`
+
+生成时的默认配置（`init`/`adopt` 写入）：
+
+```json
+{
+  "projectName": "your-project",
+  "requiredAdrTopics": [],
+  "testStrategy": "isolated-tdd",
+  "defaultOwner": "agent",
+  "collaborationMode": "solo"
+}
+```
+
+| 字段 | 默认值 | 说明 |
+| --- | --- | --- |
+| `projectName` | `"unnamed-project"` | 项目名称，写入 `feature_list.json` 的 `project` 字段 |
+| `requiredAdrTopics` | `[]` | 必须由 `docs/adr/` 覆盖的架构主题 |
+| `testStrategy` | `"isolated-tdd"` | 第 6 阶段（Agile TDD）遵循的测试策略，见下文 |
+| `defaultOwner` | `"agent"` | 未传 `--owner` 时使用的 owner |
+| `collaborationMode` | `"solo"` | `solo` 自动管理 verify claim；`team` 要求显式 claim |
+
+<Note>
+  没有单独的 `schemaVersion` 字段。`feature_list.json` 里的 `schema_version`（字符串，例如
+  `"1.0"`）才是版本号，属于状态文件本身，不属于 `harness.config.json`。
+</Note>
+
+### `testStrategy`：控制第 6 阶段怎么写测试
+
+这是决定 Agent 如何做 TDD 的开关，在 `docs/workflow/06-agile-tdd.md` 中被读取和执行：
+
+| 取值 | 行为 |
+| --- | --- |
+| `"isolated-tdd"`（默认） | 非简单功能采用测试/实现分离：一个子 Agent 只根据 `behavior`、`verification`、`source_refs` 写失败测试并确认 RED；另一个子 Agent 只拿测试文件路径实现代码使其 GREEN，且不能修改测试断言。控制会话会用步骤间的文件快照检测实现方是否偷偷改了测试。 |
+| `"in-session-tdd"` | 同一会话内先写测试、确认 RED、再实现到 GREEN，不做子 Agent 拆分，适合项目规模较小或额外隔离成本不划算的情况。 |
+| `"team-default"` | 遵循项目自身贡献文档或 CI 已经强制的测试方法，`sdlc-harness` 不规定具体机制，只要求达到相同的退出条件。 |
+
+无论使用哪种策略，重构步骤和 review 门禁都是强制的，且不由 `validate` 直接检测——这是流程约定，不是可执行规则。
+
+### 要求 ADR 主题
+
+```json
+{
+  "requiredAdrTopics": ["database", "authentication"]
+}
+```
+
+对应 ADR 需要在 frontmatter 中声明相同主题：
+
+```md
+---
+topic: authentication
+---
+```
+
+## `feature_list.json` 的 rules
+
+生成时的默认规则（写入 `feature_list.json`）：
+
+```json
+{
+  "rules": {
+    "wip_limit_per_owner": 1,
+    "passing_requires_evidence": true,
+    "do_not_skip_verification": true,
+    "feature_should_fit_one_session": true,
+    "passing_is_monotonic": true,
+    "dependencies_must_be_passing_before_start": true
+  }
+}
+```
+
+| 字段 | 说明 |
+| --- | --- |
+| `wip_limit_per_owner` | 每个 owner 同时允许的 `in_progress` 功能数，最小为 1；`validate` 的 `[pass-gate]` 会实际执行这条限制 |
+| `single_active_feature` | 已弃用的旧字段，`true`/`false` 对应 `wip_limit_per_owner: 1`/无限制；设置了 `wip_limit_per_owner` 时会被忽略 |
+| `passing_requires_evidence` | 表达完成状态需要证据的项目意图 |
+| `do_not_skip_verification` | 表达不得跳过声明验证的项目意图 |
+| `feature_should_fit_one_session` | 表达功能应可在一个会话内完成的项目意图 |
+| `passing_is_monotonic` | 表达已通过功能不得退回未完成状态的项目意图 |
+| `dependencies_must_be_passing_before_start` | 表达依赖必须先通过才能开工的项目意图 |
+
+<Note>
+  除 `wip_limit_per_owner` 外，其余字段目前主要表达项目意图：无论如何设置，`validate` 的
+  `[pass-gate]` 都会强制要求 `passing` 功能具有证据和 `kind: "review"` 证据，并执行单调状态检查；
+  `[dependency-readiness]` 也始终检查依赖是否 `passing`。不要把这些字段当作关闭门禁的开关。
+</Note>
+
+`feature_list.json` 顶层还有一个独立于 `rules` 的 `schema_version`（字符串，如 `"1.0"`），标识状态文件本身的格式版本，与 `harness.config.json` 无关。
+
+## Git 基线环境变量
+
+`validate` 会寻找可用于比较历史状态的 Git 基线。CI 中可以显式设置：
+
+```bash
+HARNESS_BASE_REF=origin/main npx sdlc-harness validate
+```
+
+GitHub Actions 也可以使用 `GITHUB_BASE_REF`。如果没有可用 Git 基线，工具回退到本地 `.harness/last-validated-features.json` 快照。
+
+## 生成文件的版本控制
+
+建议提交：
+
+- `AGENTS.md`、`feature_list.json` 和 `harness.config.json`。
+- `docs/` 下的需求、工作流和 ADR。
+- `.harness/events/*.jsonl`，让审计记录跨机器同步。
+- `.githooks/` 和 `.github/workflows/`。
+
+不要提交派生缓存 `.harness/last-validated-features.json`，也不要提交本地 `.worktrees/`。初始化模板会把它们写入 `.gitignore`。

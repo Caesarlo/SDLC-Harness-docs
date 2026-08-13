@@ -1,0 +1,175 @@
+---
+title: "审核与结论"
+description: "看懂 verify、validate 和 GitHub provider 的所有结论，并知道下一步该做什么。"
+icon: "clipboard-check"
+---
+
+SDLC Harness 有三类审核。它们回答的问题不同：
+
+| 命令 | 回答的问题 | 结论 |
+| --- | --- | --- |
+| `verify <feature-id>` | 功能声明的验证命令是否真实运行并成功？ | 每条命令 `PASS` 或 `FAIL`，以及整体通过或失败 |
+| `validate` | 整个仓库的状态、依赖和证据是否符合治理规则？ | `All checks passed.` 或带分类的错误列表 |
+| `provider github check` | GitHub 仓库保护措施是否配置到位？ | 每项 `PASS`、`FAIL` 或 `UNKNOWN` |
+
+## 功能验证结论
+
+运行：
+
+```bash
+npx sdlc-harness verify <feature-id>
+```
+
+### PASS
+
+```text
+[PASS] npm test (exit 0)
+All verification commands passed for M1-CHECKOUT-003.
+```
+
+含义：所有声明的验证命令都以退出码 0 结束。工具已经在功能的 `evidence` 中写入测试证据，包括命令、退出码、时间和 commit SHA。
+
+下一步：完成 review、添加 `kind: "review"` 证据，再把功能状态设为 `passing`。
+
+### FAIL
+
+```text
+[FAIL] npm test (exit 1)
+Verification failed for M1-CHECKOUT-003.
+```
+
+含义：至少一条验证命令失败。失败证据也会被记录，功能不应标记为 `passing`。
+
+下一步：先查看测试命令自己的输出并修复问题，然后重新运行 `verify`。
+
+<Note>
+  `verify` 不修改功能完成状态。`PASS` 表示测试命令通过，不等于整体交付已经通过。
+</Note>
+
+## 仓库总审核结论
+
+运行：
+
+```bash
+npx sdlc-harness validate
+```
+
+### 全部通过
+
+```text
+All checks passed.
+```
+
+含义：当前 `feature_list.json` 通过所有结构和治理检查。命令以退出码 0 结束，并更新本地 `.harness/last-validated-features.json` 快照。
+
+### 审核失败
+
+```text
+FAILED with 2 error(s):
+  - [dependency-readiness] Feature M2-API-002 is in_progress but depends on M1-API-001, which is not passing
+  - [pass-gate] Feature M1-API-003 is passing but has no evidence entry with kind "review"
+```
+
+含义：至少一项规则不满足。命令以非零状态退出，Git hook 或 CI 应阻止继续提交或交付。
+
+每条错误的方括号前缀表示审核类别。
+
+## 各审核类别
+
+### `[schema]` 格式审核
+
+检查 `feature_list.json` 是否符合 `feature_list.schema.json`。
+
+常见失败：字段类型错误、缺少 schema 要求的字段、值不在允许范围内。
+
+处理方式：按错误中的 JSON 路径修正字段。不要通过修改 schema 来绕过真实数据问题。
+
+### `[structural]` 基础结构审核
+
+检查：
+
+- 顶层必需字段是否存在。
+- `features` 是否为非空数组。
+- 功能 ID 是否唯一。
+- 状态是否合法。
+- 里程碑引用是否存在。
+- 每个功能是否至少声明一个验证项。
+
+处理方式：补齐缺失数据，修正重复 ID、状态或里程碑引用。
+
+### `[dependency-cycles]` 依赖图审核
+
+检查依赖是否指向已知功能，以及依赖图中是否存在环。
+
+例如 `A -> B -> A` 会让两个功能都无法准备就绪。
+
+处理方式：修正拼写错误的依赖 ID，或重新拆分功能以消除循环依赖。
+
+### `[dependency-readiness]` 开工条件审核
+
+检查一个 `in_progress` 功能的所有依赖是否已经 `passing`。
+
+处理方式：先完成依赖功能，或者把当前功能退回 `not_started`/`blocked`，不要在依赖未完成时继续实现。
+
+### `[milestone-order]` 里程碑顺序审核
+
+检查功能是否依赖更晚里程碑中的功能。
+
+处理方式：调整里程碑顺序、移动功能所属里程碑，或重新设计依赖关系。
+
+### `[stage-gate]` 来源可追溯审核
+
+检查非占位功能是否有 `source_refs`，并确认引用解析为仓库内真实文件。
+
+处理方式：让 `source_refs` 指向需求或 ADR 文件，例如 `docs/product/requirements.md#payment-timeout`。不要引用仓库外路径。
+
+### `[pass-gate]` 完成门禁审核
+
+检查：
+
+- 每个 owner 的 `in_progress` 数量是否超过 WIP 上限。
+- 占位功能是否被错误标记为 `passing`。
+- `passing` 功能是否有证据。
+- `passing` 功能是否至少有一条 `kind: "review"` 证据。
+- 之前已经 `passing` 的功能是否发生状态倒退。
+
+处理方式：根据错误完成缺失证据、降低并行 WIP 或恢复已通过状态。需要修改已完成行为时，创建新功能追踪变更。
+
+### `[adr-coverage]` 架构决策审核
+
+检查 `harness.config.json` 的 `requiredAdrTopics` 是否都被 `docs/adr/` 中的 ADR 覆盖。
+
+处理方式：为缺失主题创建 ADR，并让 ADR frontmatter 的 `topic` 与配置中的名称一致。
+
+## Git 基线如何影响结论
+
+`passing` 单调检查优先与 Git 基线比较，而不是只看本地快照。基线解析优先考虑环境变量和主分支，例如 `HARNESS_BASE_REF`、`GITHUB_BASE_REF`、`origin/main` 或 `main`。
+
+因此，全新的 CI checkout 即使没有本地 `.harness` 快照，也能发现把已通过功能删除或退回未完成状态的回归。CI 应保留完整 Git 历史。
+
+## GitHub 仓库治理结论
+
+运行：
+
+```bash
+npx sdlc-harness provider github check --owner <owner> --repo <repo> --branch main
+```
+
+| 结论 | 含义 | 是否导致失败 |
+| --- | --- | --- |
+| `PASS` | 已确认配置满足要求 | 否 |
+| `FAIL` | 已确认配置缺失、禁用或请求失败 | 是 |
+| `UNKNOWN` | 当前 token 无管理员权限，无法读取分支保护或 ruleset 等信息 | 否，只显示警告 |
+
+审核项包括分支保护、必需状态检查、是否禁止强制推送、`CODEOWNERS` 和 ruleset。
+
+<Warning>
+  `UNKNOWN` 不代表配置正确，只代表当前身份无法确认。请让有权限的仓库管理员复核。
+</Warning>
+
+## 审核顺序建议
+
+1. 开发过程中运行 `verify <feature-id>`，确保真实命令通过。
+2. 完成 review 并更新功能状态。
+3. 提交前运行 `validate`，确保整个仓库通过。
+4. 仓库初次接入或治理规则变化后运行 `provider github check`。
