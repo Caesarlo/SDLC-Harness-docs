@@ -1,0 +1,101 @@
+---
+title: "故障排查"
+description: "解决初始化、验证、claim、workspace 和 GitHub 检查中的常见问题。"
+icon: "life-ring"
+---
+
+## `Unknown command: --help`
+
+当前版本没有独立的 `--help` 页面。使用[命令参考](/reference/commands)查看完整命令，或直接运行 `sdlc-harness` 查看顶层用法。
+
+## `adopt` 跳过了已有文件
+
+这是预期行为。`adopt` 不覆盖已有文件。请逐一比较被跳过的 `AGENTS.md`、Git hook、CI 或配置文件，并手动合并缺失内容。
+
+如果你确实需要完整重建，先备份现有文件，再评估 `init --force`。该选项可能覆盖内容。
+
+## `passing` 功能缺少 review 证据
+
+错误示例：
+
+```text
+[pass-gate] Feature M1-API-001 is passing but has no evidence entry with kind "review"
+```
+
+测试证据不能代替评审。完成代码或验收评审后，在该功能的 `evidence` 数组中添加 `kind: "review"` 的记录，再运行 `validate`。
+
+## `verify` 通过，但 `validate` 失败
+
+这是可能的：
+
+- `verify` 只运行一个功能声明的验证命令。
+- `validate` 检查整个仓库的结构、依赖、证据、WIP、ADR 和状态历史。
+
+根据错误前缀处理。参见[各审核类别](/reference/review-results#各审核类别)。
+
+## 功能无法认领
+
+常见原因：
+
+- 功能已被其他 owner 的有效 claim 占用。
+- 当前 owner 已达到 `wip_limit_per_owner`。
+- 使用 `claim --next` 时，没有同时满足“未开始、未占用、依赖已通过”的功能。
+
+查看 `feature_list.json` 中的 claim 和依赖，或运行：
+
+```bash
+npx sdlc-harness status
+```
+
+租约确实过期后，可以使用 `--takeover-expired`。不要接管仍有效的 claim。
+
+## Team 模式下 `verify` 拒绝运行
+
+Team 模式不会自动认领。先执行：
+
+```bash
+npx sdlc-harness claim <feature-id> --owner <name>
+npx sdlc-harness verify <feature-id>
+```
+
+确认 `--owner` 与 claim owner 一致。
+
+## workspace 无法移除
+
+工具会阻止删除含未提交或未推送内容的 workspace。进入对应 worktree，提交、推送或手动保存内容后重试。
+
+只有明确允许丢弃内容时才运行：
+
+```bash
+npx sdlc-harness workspace remove <feature-id> --force
+```
+
+## GitHub 检查显示 `UNKNOWN`
+
+分支保护详情和 ruleset 可能需要管理员权限。普通 token 收到 403/404 时，工具会把结论降级为 `UNKNOWN` 警告。
+
+请让有管理员权限的用户重新运行检查。`UNKNOWN` 不证明配置合规。
+
+## CI 没有发现状态倒退
+
+确认 checkout 获取了完整 Git 历史，并且基线分支可解析。GitHub Actions 中通常需要：
+
+```yaml
+- uses: actions/checkout@v4
+  with:
+    fetch-depth: 0
+```
+
+必要时显式设置 `HARNESS_BASE_REF` 或检查 `GITHUB_BASE_REF`。
+
+## `source_ref` 无法解析
+
+`source_refs` 必须指向仓库内真实文件。请使用相对仓库根目录的路径，例如：
+
+```json
+{
+  "source_refs": ["docs/product/requirements.md#checkout-timeout"]
+}
+```
+
+不要使用绝对路径或仓库外路径。确认文件已创建并纳入当前工作树。
