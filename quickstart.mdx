@@ -1,47 +1,111 @@
 ---
-title: "Quickstart"
-description: "Begin with a guide on the fastest path to a successful outcome"
+title: "快速开始"
+description: "安装 SDLC Harness，初始化仓库，并完成第一次验证。"
+icon: "rocket"
 ---
 
-Describe how someone begins using your product. What is the first thing they need to do? Are there any prerequisites?
+## 前置条件
 
-A quickstart should take someone from zero to using your product. They'll get a quick win and a sense of what they can accomplish.
+开始前请确认：
 
-## Prerequisites
+- 已安装 Node.js 22 或更高版本。
+- 当前目录是你要管理的代码仓库。
+- 如果要使用 GitHub 检查或导入 GitHub Actions 证据，已安装并登录 GitHub CLI `gh`。
 
-Before you begin, you must have:
+## 1. 安装仓库协议
 
-- Requirement one (for example, Node.js 18+, a free account, an API key)
-- Requirement two (for example, a compatible device, a compatible browser, a compatible operating system)
+<Tabs>
+  <Tab title="已有仓库">
+    在项目根目录运行：
 
-## Get started
+    ```bash
+    cd your-project
+    npx sdlc-harness adopt
+    ```
+
+    `adopt` 只补充缺失文件，不覆盖现有文件。命令会列出被保留的文件，你需要手动确认它们是否已包含必要规则。
+  </Tab>
+  <Tab title="空仓库或新仓库">
+    ```bash
+    mkdir your-project
+    cd your-project
+    npx sdlc-harness init
+    ```
+
+    `init` 会生成完整协议。如果目标文件已存在且内容冲突，命令会停止，避免意外覆盖。
+  </Tab>
+</Tabs>
+
+安装后，仓库会出现 `AGENTS.md`、`feature_list.json`、`harness.config.json`、工作流文档、Git hook 和 CI 模板。
+
+## 2. 启用提交前检查
+
+```bash
+git config core.hooksPath .githooks
+```
+
+这项配置只需在每个本地 clone 中执行一次。之后每次提交都会运行 `sdlc-harness validate`。
+
+## 3. 运行第一次审核
+
+```bash
+npx sdlc-harness validate
+```
+
+成功时会看到：
+
+```text
+All checks passed.
+```
+
+失败时会看到带分类的具体原因：
+
+```text
+FAILED with 1 error(s):
+  - [pass-gate] Feature M1-CHECKOUT-003 is passing but has no evidence entry with kind "review"
+```
+
+按照错误前缀定位问题。完整解释见[审核与结论](/reference/review-results)。
+
+## 4. 查看当前工作状态
+
+```bash
+npx sdlc-harness status
+```
+
+命令会输出 JSON，包含各状态的功能数量、正在进行的功能和里程碑数量。它适合开发者阅读，也适合脚本和 Agent 使用。
+
+## 5. 完成第一个功能
 
 <Steps>
-  <Step title="Install">
-    Describe how to install your product or sign up.
+  <Step title="让 Agent 读取仓库协议">
+    告诉你的编码 Agent：先读取仓库根目录的 `AGENTS.md`，再继续工作。
+  </Step>
+  <Step title="创建或选择一个功能">
+    可以运行交互式命令：
 
     ```bash
-    npm install your-package
+    npx sdlc-harness new-feature
     ```
   </Step>
-  <Step title="Configure">
-    Describe any setup or configuration needed before first use.
-
+  <Step title="实现并运行真实验证">
     ```bash
-    your-cli init
+    npx sdlc-harness verify <feature-id>
     ```
+
+    `verify` 会执行该功能在 `verification` 中声明的命令，并记录测试证据。
   </Step>
-  <Step title="Run it">
-    Show the first thing a user does to see it working.
+  <Step title="完成评审并通过总审核">
+    在 `feature_list.json` 中记录一条 `kind: "review"` 的证据，确认验收后把功能状态设为 `passing`，然后运行：
 
     ```bash
-    your-cli start
+    npx sdlc-harness validate
     ```
   </Step>
 </Steps>
 
-<Tip>
-  Give people a way to get help. This could be a link to a support page, a chat with a customer support agent, or a forum for your product.
+<Warning>
+  `verify` 不会自动把功能设为 `passing`。测试通过只是完成条件之一；你仍需完成 review，并明确更新功能状态。
+</Warning>
 
-  Example: Need help? Reach out to us at [support@yourcompany.com](mailto:support@yourcompany.com).
-</Tip>
+下一步：阅读[日常工作流](/guides/daily-workflow)，了解从规划到交付的完整操作。
