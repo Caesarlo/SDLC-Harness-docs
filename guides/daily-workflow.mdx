@@ -1,0 +1,129 @@
+---
+title: "日常工作流"
+description: "从创建里程碑和功能，到实现、验证、评审与提交。"
+icon: "list-check"
+---
+
+这套流程适合开发者自己操作，也适合交给编码 Agent 执行。开始前先让 Agent 读取 `AGENTS.md`。
+
+## 1. 确认当前状态
+
+```bash
+npx sdlc-harness status
+npx sdlc-harness validate
+```
+
+先解决已有审核错误，再开始新工作。这样可以区分“原有问题”和“本次改动引入的问题”。
+
+## 2. 创建里程碑和功能
+
+需要新里程碑时运行：
+
+```bash
+npx sdlc-harness new-milestone
+```
+
+命令会询问里程碑 ID、标题和目标。
+
+创建功能时运行：
+
+```bash
+npx sdlc-harness new-feature
+```
+
+请用可观察结果描述 `behavior`，并提供：
+
+- 所属里程碑。
+- owner，可留空使用共享默认分组。
+- 至少一个真实可运行的验证命令。
+- 已有依赖的功能 ID。
+- 指向需求或 ADR 文件的 `source_refs`。
+
+<Tip>
+  功能应该小到能够独立实现和验证。不要把整个里程碑写成一个功能。
+</Tip>
+
+## 3. 认领功能
+
+<Tabs>
+  <Tab title="Solo 模式">
+    默认模式下，你通常无需手动 claim。运行 `verify` 时工具会为 `defaultOwner` 临时认领功能，结束后自动释放。
+  </Tab>
+  <Tab title="Team 模式">
+    先认领明确功能：
+
+    ```bash
+    npx sdlc-harness claim <feature-id> --owner <name>
+    ```
+
+    或认领依赖已经通过的下一个可开发功能：
+
+    ```bash
+    npx sdlc-harness claim --next --owner <name>
+    ```
+  </Tab>
+</Tabs>
+
+## 4. 可选：创建独立 workspace
+
+功能已被认领后，可以创建独立 Git worktree：
+
+```bash
+npx sdlc-harness workspace create <feature-id>
+```
+
+默认从 `main` 创建 `feature/<id>` 分支。需要其他基线时使用 `--base <branch>`。
+
+## 5. 实现并验证
+
+按照功能的 `behavior` 和 `verification` 开发。然后运行：
+
+```bash
+npx sdlc-harness verify <feature-id>
+```
+
+每条验证命令都会显示结论和退出码：
+
+```text
+[PASS] npm test (exit 0)
+All verification commands passed for M1-CHECKOUT-003.
+```
+
+失败结果同样会被记录，便于追踪实际发生过的验证。
+
+## 6. 完成 review
+
+测试通过后检查：
+
+- 实现是否满足可观察行为。
+- 新旧测试是否覆盖关键路径和失败路径。
+- 是否遵守相关需求、ADR 和安全边界。
+- 文档、迁移或部署说明是否需要同步更新。
+
+完成后，在该功能的 `evidence` 中添加 `kind: "review"` 的记录。review 证据用于表达“有人或 Agent 已按完成标准检查过实现”，不能由测试证据替代。
+
+## 7. 标记完成并运行总审核
+
+确认所有条件满足后，把功能状态更新为 `passing`，再运行：
+
+```bash
+npx sdlc-harness validate
+```
+
+只有看到 `All checks passed.` 才表示仓库治理审核通过。`validate` 不会重新运行功能测试，因此不要跳过前一步的 `verify`。
+
+## 8. 提交并清理
+
+提交前 Git hook 会再次运行审核。如果使用 Team 模式，完成后释放 claim：
+
+```bash
+npx sdlc-harness release <feature-id> --owner <name>
+```
+
+不再需要 workspace 时：
+
+```bash
+npx sdlc-harness workspace remove <feature-id>
+```
+
+存在未提交或未推送内容时，工具会拒绝移除。确认允许丢弃这些内容后才能使用 `--force`。
