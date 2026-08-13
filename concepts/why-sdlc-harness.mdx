@@ -11,7 +11,7 @@ icon: "circle-question"
 编码 Agent 的会话是有边界的。一次对话结束、上下文被压缩，或者换了一个 Agent 继续同一个任务，"为什么改这个"、"改到哪一步了"、"还差什么"这些信息如果只存在于聊天记录里，就会随会话一起消失。下一个接手的人或 Agent 只能重新读代码、猜测意图，或者干脆重做一遍已经做过的分析。
 
 ```mermaid placement="top-right" actions={true}
-%%{init: {"flowchart": {"defaultRenderer": "elk", "curve": "basis"}, "theme": "base", "themeVariables": {"fontFamily": "Inter, ui-sans-serif, system-ui, sans-serif", "primaryColor": "#FEF2F2", "primaryBorderColor": "#EF4444", "primaryTextColor": "#7F1D1D", "lineColor": "#EF4444", "tertiaryColor": "#FFF7ED"}}}%%
+%%{init: {"flowchart": {"curve": "basis"}, "theme": "base", "themeVariables": {"fontFamily": "Inter, ui-sans-serif, system-ui, sans-serif", "primaryColor": "#FEF2F2", "primaryBorderColor": "#EF4444", "primaryTextColor": "#7F1D1D", "lineColor": "#EF4444", "tertiaryColor": "#FFF7ED"}}}%%
 flowchart LR
   subgraph 没有仓库原生状态
     direction LR

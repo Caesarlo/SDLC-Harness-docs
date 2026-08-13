@@ -80,7 +80,7 @@ npx sdlc-harness claim <feature-id> --owner alice --push
 Git 不是实时锁。两台机器可能在本地同时认领同一功能。第二次 push 被远程拒绝时，工具会撤销无法推送的本地 claim、同步远程状态，并尝试认领 ready 队列中的下一个功能。
 
 ```mermaid placement="top-right" actions={true}
-%%{init: {"flowchart": {"defaultRenderer": "elk", "curve": "basis"}, "theme": "base", "themeVariables": {"fontFamily": "Inter, ui-sans-serif, system-ui, sans-serif", "primaryColor": "#FFF7ED", "primaryBorderColor": "#F59E0B", "primaryTextColor": "#451A03", "lineColor": "#D97706", "tertiaryColor": "#FFFBEB"}}}%%
+%%{init: {"flowchart": {"curve": "basis"}, "theme": "base", "themeVariables": {"fontFamily": "Inter, ui-sans-serif, system-ui, sans-serif", "primaryColor": "#FFF7ED", "primaryBorderColor": "#F59E0B", "primaryTextColor": "#451A03", "lineColor": "#D97706", "tertiaryColor": "#FFFBEB"}}}%%
 flowchart TD
   M1["机器 1：本地 claim F1"] --> P1["push"]
   M2["机器 2：本地 claim F1（未看到机器 1 的 push）"] --> P2["push"]
