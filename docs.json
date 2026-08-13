@@ -1,37 +1,47 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mintlify Starter Kit",
+  "name": "SDLC Harness",
+  "description": "面向开发者与编码 Agent 的仓库原生 SDLC 治理工具使用文档",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#F59E0B",
+    "light": "#FBBF24",
+    "dark": "#D97706"
   },
   "favicon": "/favicon.svg",
   "navigation": {
     "pages": [
       {
-        "group": "Getting Started",
+        "group": "开始使用",
         "pages": [
           "index",
-          "quickstart"
+          "concepts/why-sdlc-harness",
+          "quickstart",
+          "concepts/how-it-works"
+        ]
+      },
+      {
+        "group": "使用指南",
+        "pages": [
+          "guides/daily-workflow",
+          "guides/team-collaboration"
+        ]
+      },
+      {
+        "group": "参考",
+        "pages": [
+          "reference/review-results",
+          "reference/commands",
+          "reference/configuration"
+        ]
+      },
+      {
+        "group": "帮助",
+        "pages": [
+          "help/troubleshooting"
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
+    ]
   },
   "logo": {
     "light": "/logo/light.svg",
@@ -40,15 +50,10 @@
   "navbar": {
     "links": [
       {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "type": "github",
+        "href": "https://github.com/Caesarlo/sdlc-harness"
       }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://app.mintlify.com"
-    }
+    ]
   },
   "contextual": {
     "options": [
@@ -56,17 +61,8 @@
       "view",
       "chatgpt",
       "claude",
-      "perplexity",
-      "mcp",
       "cursor",
       "vscode"
     ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
   }
 }

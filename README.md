@@ -1,55 +1,50 @@
-# Mintlify Starter Kit
+# SDLC Harness 文档
 
-Use the starter kit to get your docs deployed and ready to customize.
+这是 [SDLC Harness](https://github.com/Caesarlo/sdlc-harness) 的用户文档站点，用 [Mintlify](https://mintlify.com) 构建，内容全部是 `.mdx`。
 
-Click the green **Use this template** button at the top of this repo to copy the Mintlify starter kit. The starter kit contains examples with
+SDLC Harness 是一个仓库原生的 SDLC 治理 CLI：把需求、功能状态、依赖、验证证据和交付规则保存在代码仓库里，让开发者和编码 Agent 按同一套可执行规则协作，而不是依赖聊天记录和自我声明的"已完成"。这个仓库只维护文档，工具本身的源码在 `sdlc-harness` 主仓库。
 
-- Guide pages
-- Navigation
-- Customizations
-- API reference pages
-- Use of popular components
+## 文档结构
 
-**[Follow the full quickstart guide](https://starter.mintlify.com/quickstart)**
+| 目录 | 内容 |
+| --- | --- |
+| `index.mdx` | 首页：工具是什么、最重要的特点 |
+| `concepts/why-sdlc-harness.mdx` | 为什么需要它：真实失效模式与对应机制 |
+| `concepts/how-it-works.mdx` | 工作原理：仓库状态、功能生命周期、九阶段工作流 |
+| `quickstart.mdx` | 5 分钟接入指南 |
+| `guides/` | 日常工作流、团队与多 Agent 协作 |
+| `reference/` | 命令参考、配置参考、审核结论参考 |
+| `help/troubleshooting.mdx` | 常见问题排查 |
 
-## AI-assisted writing
+页面之间的导航结构定义在 [`docs.json`](docs.json)。
 
-Set up your AI coding tool to work with Mintlify:
+## 本地预览
+
+安装 Mintlify CLI：
 
 ```bash
-npx skills add https://mintlify.com/docs
-```
-
-This command installs Mintlify's documentation skill for your configured AI tools like Claude Code, Cursor, Windsurf, and others. The skill includes component reference, writing standards, and workflow guidance.
-
-See the [AI tools guides](/ai-tools) for tool-specific setup.
-
-## Development
-
-Install the [Mintlify CLI](https://www.npmjs.com/package/mint) to preview your documentation changes locally. To install, use the following command:
-
-```
 npm i -g mint
 ```
 
-Run the following command at the root of your documentation, where your `docs.json` is located:
+在仓库根目录（`docs.json` 所在目录）运行：
 
-```
+```bash
 mint dev
 ```
 
-View your local preview at `http://localhost:3000`.
+在 `http://localhost:3000` 查看本地预览。
 
-## Publishing changes
+## 编写规范
 
-Install our GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app) to propagate changes from your repo to your deployment. Changes are deployed to production automatically after pushing to the default branch.
+- 所有页面使用简体中文，代码块、命令、字段名保持原样（不翻译标识符）。
+- 涉及命令、配置字段或校验行为的内容，必须先对照 `sdlc-harness` 源码（`src/`、`templates/`）核实，不凭记忆或推测编写。
+- 流程性内容优先用 Mermaid（`flowchart`、`sequenceDiagram`、`stateDiagram-v2`）而不是大段文字描述状态流转。
+- 修改反映工具行为的页面后，运行一次 `sdlc-harness` 对应命令或读一遍相关源码，确认没有引入过时或虚构的字段。
 
-## Need help?
+## 发布
 
-### Troubleshooting
+在 [Mintlify Dashboard](https://dashboard.mintlify.com) 安装 GitHub App 后，推送到默认分支会自动部署到生产环境。
 
-- If your dev environment isn't running: Run `mint update` to ensure you have the most recent version of the CLI.
-- If a page loads as a 404: Make sure you are running in a folder with a valid `docs.json`.
+## 相关链接
 
-### Resources
-- [Mintlify documentation](https://mintlify.com/docs)
+- [Mintlify 文档](https://mintlify.com/docs)
