@@ -64,5 +64,8 @@
       "cursor",
       "vscode"
     ]
+  },
+  "icons": {
+    "library": "fontawesome"
   }
 }
