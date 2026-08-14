@@ -1,100 +1,86 @@
 ---
 title: "工作原理"
-description: "理解仓库状态、功能生命周期、九阶段工作流和工具边界。"
+description: "理解仓库状态源、功能状态机、证据门禁、追溯和九阶段工作流。"
 icon: "diagram-project"
 ---
 
 ## 仓库是唯一状态源
 
-SDLC Harness 不依赖外部项目管理服务。它把工作协议和当前状态直接写入 Git 仓库。
+SDLC Harness 不依赖外部项目管理服务。协议、计划、执行状态和证据都与代码一起进入 Git 历史。
 
-| 文件或目录 | 用途 |
+| 内容 | 状态源 |
 | --- | --- |
-| `AGENTS.md` | 告诉编码 Agent 如何进入流程、选择任务和结束会话 |
-| `feature_list.json` | 保存里程碑、功能、依赖、状态、claim 和证据 |
-| `feature_list.schema.json` | 定义状态文件的机器可读格式 |
-| `harness.config.json` | 配置协作模式、默认 owner、ADR 要求等项目规则 |
-| `progress.md` | 保存跨会话的进度检查点 |
-| `docs/workflow/` | 提供九个 SDLC 阶段的操作指南 |
-| `docs/adr/` | 保存架构决策记录 |
-| `.harness/events/` | 保存认领、验证等操作的追加式审计日志 |
+| Agent 工作协议 | `AGENTS.md`、`docs/workflow/` |
+| 里程碑与功能 | `feature_list.json` |
+| 项目策略 | `harness.config.json` |
+| 需求与设计 | `docs/product/`、`docs/architecture/`、`docs/adr/` |
+| 会话交接 | `progress.md` |
+| 审计事件 | `.harness/events/*.jsonl` |
 
-## 功能状态
+## 功能状态机
 
-每个功能处于以下状态之一：
-
-| 状态 | 含义 | 下一步 |
-| --- | --- | --- |
-| `not_started` | 尚未开始，可以在依赖通过后被认领 | 认领并开始实现 |
-| `in_progress` | 某个 owner 正在实现 | 完成代码、测试和评审 |
-| `blocked` | 当前无法继续 | 记录阻塞原因并解决依赖或外部问题 |
-| `passing` | 已满足完成条件 | 保持通过状态并进入提交、CI 或部署 |
-
-```mermaid placement="top-right" actions={true}
-%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Inter, ui-sans-serif, system-ui, sans-serif", "primaryColor": "#FFF7ED", "primaryBorderColor": "#F59E0B", "primaryTextColor": "#451A03", "lineColor": "#D97706", "noteBkgColor": "#FFFBEB", "noteBorderColor": "#F59E0B", "noteTextColor": "#451A03"}}}%%
+```mermaid
 stateDiagram-v2
   [*] --> not_started
-  not_started --> in_progress: claim（受 WIP 上限约束）
+  not_started --> in_progress: feature start / claim
   in_progress --> not_started: release
-  in_progress --> blocked: 记录 blocker
-  blocked --> in_progress: 阻塞解除
-  in_progress --> passing: verify 通过 + review 证据齐全
+  in_progress --> blocked: feature block
+  blocked --> not_started: feature reopen
+  in_progress --> passing: feature complete
   passing --> [*]
-
-  note right of passing
-    单调状态：validate 会用 Git 基线
-    检测 passing 是否被悄悄改回
-    其他状态，一旦发生即报错
-  end note
 ```
 
-<Important>
-  `passing` 是单调状态。一个曾经通过的功能不能在后续审核中悄悄退回其他状态。需要修改已完成功能时，创建新的功能来追踪变更。
-</Important>
+- `not_started`：依赖通过后可以开始。
+- `in_progress`：由一个有效 claim 保护，受 owner WIP 上限约束。
+- `blocked`：记录了无法继续的外部原因，不占用 claim。
+- `passing`：所有完成门禁已经满足，默认不得悄悄回退。
 
-## 证据不是一句声明
+## claim、owner 与 actor
 
-功能标记为 `passing` 前至少需要：
+owner 是责任归属，actor 用于区分同一 owner 启动的不同 Agent 会话。claim 始终按功能互斥，并带有租约截止时间。
 
-- 一条实际验证证据。推荐使用 `sdlc-harness verify <feature-id>` 生成。
-- 一条 `kind: "review"` 的评审证据。
+Solo 模式下，`verify` 按需临时 claim，单人用户通常感觉不到租约。Team 模式要求显式 claim；过期后才能被其他 owner 接管。两种模式都会拒绝与他人的活跃 claim 竞争写入。
 
-`verify` 生成的测试证据包含命令、退出码、时间和当前 commit SHA。这样本地、CI 和后续 Agent 可以判断“什么代码、用什么命令、在什么时候”通过了验证。
+## 完成是证据链
+
+```mermaid
+flowchart LR
+  A["声明 verification"] --> B["verify / manual evidence"]
+  B --> C["独立 review"]
+  C --> D["feature complete"]
+  D --> E["validate"]
+```
+
+- 自动验证记录命令、退出码、时间和 commit SHA。
+- 手工验证绑定明确的 manual verification 索引和观察说明。
+- review 绑定当前 commit，评审者不能是 claim owner，并且必须晚于最新验证。
+- 制品 approval 绑定文件 SHA-256 内容哈希；内容变化后失效。
+- `feature complete` 原子检查单个功能的完成条件。
+- `validate` 审核全仓库结构、依赖、阶段、证据和追溯。
 
 ## 九阶段工作流
 
-工作流不是每次都从第一阶段顺序执行。第 4、6、7、8、9 阶段构成核心交付循环，其余阶段按变更需要进入。
+工作流不是每次从第 1 阶段机械执行。功能拆解、敏捷实现和自验收构成核心循环；需求、架构、用户故事和里程碑按风险与范围进入；部署和可观测性由项目配置决定。
 
-```mermaid placement="top-right" actions={true}
-%%{init: {"flowchart": {"curve": "basis"}, "theme": "base", "themeVariables": {"fontFamily": "Inter, ui-sans-serif, system-ui, sans-serif", "primaryColor": "#FFF7ED", "primaryBorderColor": "#F59E0B", "primaryTextColor": "#451A03", "lineColor": "#D97706", "tertiaryColor": "#FFFBEB"}}}%%
+```mermaid
 flowchart TB
-  A["1 需求：范围不明确时"] -.-> D
-  B["2 架构与 ADR：影响设计时"] -.-> D
-  C["3 用户故事：需要先拆解价值时"] -.-> D
-  E["5 里程碑：需要规划或重排时"] -.-> D
-  D["4 功能拆解"] --> F["6 敏捷开发 / TDD"]
+  A["1 需求"] -.按需.-> D["4 功能拆解"]
+  B["2 架构 / ADR"] -.按需.-> D
+  C["3 用户故事"] -.按需.-> D
+  E["5 里程碑"] -.按需.-> D
+  D --> F["6 敏捷开发 / TDD"]
   F --> G["7 自验收"]
   G --> H["8 部署"]
   H --> I["9 可观测性与反馈"]
-  I -."新反馈".-> A
-  classDef optional fill:#F8FAFC,stroke:#94A3B8,color:#334155,stroke-width:1.5px
-  classDef core fill:#FFF7ED,stroke:#F59E0B,color:#451A03,stroke-width:2px
-  classDef feedback fill:#ECFDF5,stroke:#10B981,color:#064E3B,stroke-width:2px
-  class A,B,C,E optional
-  class D,F,G,H core
-  class I feedback
-  linkStyle 8 stroke:#10B981,stroke-width:2px
+  I -.新反馈.-> A
 ```
 
-`AGENTS.md` 中的 Routing Map 会根据新能力、小修复、生产事故或继续已有功能，帮助 Agent 选择入口。
+`deploymentMode` 和 `observabilityMode` 可以让没有部署目标或运行时受众的库、CLI 与内部脚本跳过不适用阶段。
 
-## 工具负责什么
+## 原子写入与并发
 
-SDLC Harness 是协议与验证层：
+功能创建、claim、验证证据和生命周期更新使用原子写入与 revision 检查。检测到并发修改时，安全路径会重新读取并合并一次，或明确拒绝覆盖，而不是静默丢失另一个 Agent 的改动。
 
-- 它会运行你为功能声明的验证命令，但不是测试框架。
-- 它会检查证据与状态是否一致，但不能证明需求本身正确。
-- 它会管理 claim 和 worktree，但不是托管项目管理服务。
-- 它会生成 CI 模板，但真实构建、测试和部署命令仍由项目提供。
+## 工具边界
 
-这条边界很重要：工具保证过程可追踪、规则可执行，不替你决定产品是否有价值。
+SDLC Harness 会执行你声明的命令并审核证据，但不会判断需求是否正确、替代测试框架、自动决定产品价值或提供真正的分布式锁。Git 跨机器 claim 仍通过提交和推送协调。

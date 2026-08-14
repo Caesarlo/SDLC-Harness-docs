@@ -1,0 +1,58 @@
+---
+title: "需求追溯"
+description: "连接需求、用户故事、验收标准、功能和验证项。"
+icon: "link"
+---
+
+追溯矩阵用仓库内的稳定引用回答：每条需求由什么功能实现，每条验收标准由什么检查验证。
+
+## 引用链
+
+```text
+FR/NFR requirement → user story → acceptance criterion → feature → verification
+```
+
+功能的 `source_refs` 可以直接引用需求，也可以引用用户故事的验收标准。每条 verification 的 `source_refs` 应指向它实际验证的验收标准。
+
+```json
+{
+  "id": "M1-AUTH-001",
+  "source_refs": [
+    "docs/product/requirements.md#FR-1",
+    "docs/product/user-stories.md#US-1.AC-1"
+  ],
+  "verification": [
+    {
+      "type": "automated",
+      "command": "npm test -- auth",
+      "expected": "有效凭据创建会话",
+      "source_refs": ["docs/product/user-stories.md#US-1.AC-1"]
+    }
+  ]
+}
+```
+
+## 查看矩阵
+
+```bash
+npx @caesarlo/sdlc-harness traceability
+```
+
+命令以 JSON 输出矩阵和缺口，并在矩阵不完整时返回非零退出码。`status` 也包含追溯摘要。
+
+## 常见缺口
+
+| 字段 | 含义 | 修复 |
+| --- | --- | --- |
+| `uncoveredRequirements` | 需求没有任何功能覆盖 | 为功能添加对应 FR/NFR 引用 |
+| `orphanStories` | 用户故事没有关联需求 | 在故事中引用 FR/NFR |
+| `orphanFeatures` | 功能没有关联需求或验收标准 | 补充功能 `source_refs` |
+| `uncoveredAcceptanceCriteria` | 验收标准没有功能覆盖 | 将 AC 引用到负责功能 |
+| `unverifiedAcceptanceCriteria` | AC 没有任何 verification 覆盖 | 在精确验证项中添加 AC 引用 |
+| `unknownReferences` | 引用无法解析 | 修正仓库内路径或锚点 ID |
+
+模板中的 scope placeholder 尚未拆解时，追溯检查会延期。真实需求和功能建立后，缺口会成为 `validate` 的 `[traceability]` 错误。
+
+<Tip>
+  一个 verification 只引用它真正证明的验收标准。不要为了让矩阵变绿，把所有 AC 批量挂到一条宽泛命令上。
+</Tip>
