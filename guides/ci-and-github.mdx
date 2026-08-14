@@ -1,0 +1,66 @@
+---
+title: "CI 与 GitHub"
+description: "在 Git hook、GitHub Actions 和跨机器协作中执行同一套门禁。"
+icon: "github"
+---
+
+## 本地提交门禁
+
+```bash
+git config core.hooksPath .githooks
+```
+
+生成的 pre-commit hook 会运行 `validate`。每个 clone 需要单独配置一次。
+
+## GitHub Actions
+
+`init`/`adopt` 会生成 CI 和部署工作流。它们固定第三方 Action 的完整 commit SHA，并在真实项目检查或部署步骤未配置时失败关闭。接入后应把项目自己的安装、构建、测试和部署命令接进去。
+
+为了让 `passing_is_monotonic` 在新 checkout 中也能发现状态倒退，CI 应获取足够 Git 历史，并提供基线：
+
+```yaml
+- uses: actions/checkout@<full-commit-sha>
+  with:
+    fetch-depth: 0
+```
+
+```bash
+HARNESS_BASE_REF=origin/main npx @caesarlo/sdlc-harness validate
+```
+
+GitHub Actions 的 `GITHUB_BASE_REF` 也会被识别。没有 Git 基线时，工具回退到本地成功审核快照；两者都不存在时不会制造误报。
+
+## 仓库治理检查
+
+```bash
+npx @caesarlo/sdlc-harness provider github check
+```
+
+该命令检查目标分支的 GitHub 配置。owner/repo 默认从 `origin` 推断，也可以显式传入：
+
+```bash
+npx @caesarlo/sdlc-harness provider github check \
+  --owner acme --repo checkout --branch main
+```
+
+`PASS` 表示已确认符合要求，`FAIL` 表示已确认不符合，`UNKNOWN` 表示当前 token 缺少管理员权限，无法判断。它不会运行功能测试，也不会替代 `validate`。
+
+## 导入 CI 证据
+
+```bash
+npx @caesarlo/sdlc-harness evidence import M1-AUTH-001 --ci-run 123456
+```
+
+导入前工具通过 `gh api` 验证 run 已完成且成功。需要显式仓库时添加 `--owner` 和 `--repo`。
+
+## 跨机器 claim
+
+```bash
+npx @caesarlo/sdlc-harness claim M1-AUTH-001 --owner alice --push
+```
+
+Git 不是实时锁：两台机器可能在本地同时认领。`--push` 会提交并推送 claim；如果远端抢先确认同一功能，工具会在同步后尝试认领下一个 ready 功能。可用 `--remote` 和 `--branch` 修改目标。
+
+<Warning>
+  不要把普通本地 claim 当作跨机器锁。团队跨设备协作时使用 `--push`，并在开始前同步远端状态。
+</Warning>

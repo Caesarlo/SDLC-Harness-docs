@@ -1,134 +1,94 @@
 ---
-title: "团队与多 Agent 协作"
-description: "使用 claim、租约、WIP 上限和 workspace 安全地并行工作。"
+title: "团队协作"
+description: "使用 claim、租约、WIP、跨机器同步和独立 workspace 协调多人或多 Agent。"
 icon: "people-group"
 ---
 
-## 选择协作模式
-
-在 `harness.config.json` 中设置：
+## 启用 Team 模式
 
 ```json
 {
-  "collaborationMode": "team",
-  "defaultOwner": "your-name"
+  "defaultOwner": "alice",
+  "collaborationMode": "team"
 }
 ```
 
-| 模式 | 适合场景 | claim 行为 |
-| --- | --- | --- |
-| `solo` | 一个人或单个 Agent 会话为主 | `verify` 自动认领并释放 |
-| `team` | 多人、多 Agent 或多机器并行 | 你必须显式认领，`verify` 不会代管 claim |
+Team 模式不会隐式认领或释放功能。包括 `verify` 在内的写入流程要求调用者先持有有效 claim。
 
-## claim 与租约
+## owner 与 actor
 
-```mermaid placement="top-right" actions={true}
-%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Inter, ui-sans-serif, system-ui, sans-serif", "primaryColor": "#FFF7ED", "primaryBorderColor": "#F59E0B", "primaryTextColor": "#451A03", "lineColor": "#D97706", "actorBkg": "#FFF7ED", "actorBorder": "#F59E0B", "actorTextColor": "#451A03", "signalColor": "#D97706", "signalTextColor": "#451A03", "noteBkgColor": "#FFFBEB", "noteBorderColor": "#F59E0B", "noteTextColor": "#451A03"}}}%%
-sequenceDiagram
-  participant A as Owner A
-  participant Repo as feature_list.json
-  participant B as Owner B
-
-  A->>Repo: claim（lease_until = now + ttl）
-  Note over A,Repo: A 在 lease 内实现并 verify
-  A->>Repo: claim renew（延长 lease_until）
-  B->>Repo: claim 同一 feature-id
-  Repo-->>B: 拒绝，claim 仍有效
-
-  Note over A: A 忘记 release，lease 到期
-  B->>Repo: claim --takeover-expired
-  Repo-->>B: 接管成功，claim 归 B
-```
-
-认领一个功能：
+- owner 表示最终责任人，例如开发者或团队成员。
+- actor 表示某次 Agent 会话，例如 `codex-1`。
+- 一个 owner 可以启动多个 actor，但同一功能只允许一个 claim。
 
 ```bash
-npx sdlc-harness claim <feature-id> --owner alice --actor codex-1 --ttl 120
+npx @caesarlo/sdlc-harness claim M1-AUTH-001 \
+  --owner alice --actor codex-1 --ttl 120
 ```
 
-- `owner` 表示对功能负责的人或团队身份。
-- `actor` 用于区分同一 owner 下的多个 Agent 会话。
-- `ttl` 是租约分钟数，默认 120 分钟。
-- 功能 ID 始终是互斥单位。两个 actor 不能同时认领同一个功能。
+## 租约
 
-长时间工作时续期：
+长期工作应在过期前续租：
 
 ```bash
-npx sdlc-harness claim renew <feature-id> --owner alice --ttl 120
+npx @caesarlo/sdlc-harness claim renew M1-AUTH-001 --owner alice --ttl 120
 ```
 
-租约已过期时，新 owner 可以接管：
+只有租约已过期时才能接管：
 
 ```bash
-npx sdlc-harness claim <feature-id> --takeover-expired --owner bob
+npx @caesarlo/sdlc-harness claim M1-AUTH-001 \
+  --takeover-expired --owner bob --actor claude-2
 ```
+
+接管会保留前任 owner 信息供审计。活跃租约不会被强行覆盖。
 
 ## WIP 上限
 
-`feature_list.json` 的 `rules.wip_limit_per_owner` 控制每个 owner 同时可进行的功能数，默认是 1。
+`feature_list.json.rules.wip_limit_per_owner` 默认是 1。达到上限后，owner 不能再认领新功能。先完成、阻塞或释放当前功能，而不是通过新 owner 名称绕过限制。
 
-这个规则会在 claim 时即时检查，也会在 `validate` 的 `[pass-gate]` 中复查。它避免一个开发者或 Agent 同时开启过多工作却没有完成任何一项。
-
-## 跨机器认领
+## 认领下一个功能
 
 ```bash
-npx sdlc-harness claim <feature-id> --owner alice --push
+npx @caesarlo/sdlc-harness claim --next --owner alice
 ```
 
-`--push` 会提交并推送 claim，默认使用 `origin/main`。可以通过 `--remote` 和 `--branch` 修改目标。
+只会选择 `not_started`、未持有有效 claim 且依赖全部 `passing` 的功能。priority 越小越优先。
 
-Git 不是实时锁。两台机器可能在本地同时认领同一功能。第二次 push 被远程拒绝时，工具会撤销无法推送的本地 claim、同步远程状态，并尝试认领 ready 队列中的下一个功能。
+## 跨机器同步
 
-```mermaid placement="top-right" actions={true}
-%%{init: {"flowchart": {"curve": "basis"}, "theme": "base", "themeVariables": {"fontFamily": "Inter, ui-sans-serif, system-ui, sans-serif", "primaryColor": "#FFF7ED", "primaryBorderColor": "#F59E0B", "primaryTextColor": "#451A03", "lineColor": "#D97706", "tertiaryColor": "#FFFBEB"}}}%%
-flowchart TD
-  M1["机器 1：本地 claim F1"] --> P1["push"]
-  M2["机器 2：本地 claim F1（未看到机器 1 的 push）"] --> P2["push"]
-  P1 --> OK1["推送成功，F1 归机器 1"]
-  P2 --> Reject["远程已有 F1 的 claim，被拒绝"]
-  Reject --> Discard["丢弃机器 2 的本地 claim 提交"]
-  Discard --> Resync["同步远程最新状态"]
-  Resync --> Fallback["自动认领 ready 队列中的下一个功能"]
-  Fallback --> P3["push，成功"]
-  classDef brand fill:#FFF7ED,stroke:#F59E0B,color:#451A03,stroke-width:2px
-  classDef success fill:#ECFDF5,stroke:#10B981,color:#064E3B,stroke-width:2px
-  classDef failure fill:#FEF2F2,stroke:#EF4444,color:#7F1D1D,stroke-width:2px
-  class M1,M2,P1,P2,Discard,Resync,Fallback brand
-  class OK1,P3 success
-  class Reject failure
-  linkStyle 2,7 stroke:#10B981,stroke-width:2px
-  linkStyle 3,4 stroke:#EF4444,stroke-width:2px
+```bash
+npx @caesarlo/sdlc-harness claim M1-AUTH-001 --owner alice --push
 ```
+
+`--push` 默认提交到 `origin/main`，可用 `--remote` 和 `--branch` 调整。两个设备仍可能先在本地同时认领；推送冲突时工具会同步远端并尝试回退到下一个 ready 功能。
 
 ## 独立 workspace
 
 ```bash
-npx sdlc-harness workspace create <feature-id> --base main
-npx sdlc-harness workspace status
+npx @caesarlo/sdlc-harness workspace create M1-AUTH-001 --base main
+npx @caesarlo/sdlc-harness workspace status
 ```
 
-每个 workspace 位于独立 worktree 和 `feature/<id>` 分支，适合多个 Agent 并行实现不同功能。
+workspace 位于 `.worktrees/<feature-id>`，分支为 `feature/<id>`。状态命令会同时显示 claim 是否活跃和路径是否仍存在。
 
-清理过期或已释放 claim 对应的 workspace：
+完成并推送后移除：
 
 ```bash
-npx sdlc-harness workspace prune
+npx @caesarlo/sdlc-harness workspace remove M1-AUTH-001
+npx @caesarlo/sdlc-harness workspace prune
 ```
 
-工具不会删除仍有有效 claim 的 workspace。发现未提交或未推送内容时，它会跳过并报告原因。
+remove 会拒绝脏或未推送 workspace。prune 只清理 claim 已释放或过期的安全项，绝不移除活跃 claim 的 workspace。
 
-## GitHub 仓库治理检查
+## 推荐并行模式
 
-```bash
-npx sdlc-harness provider github check
-```
+1. 所有 Agent 先同步远端并读取 `status`。
+2. 每个 Agent 认领不同功能，并创建对应 workspace。
+3. 按需续租，阻塞时立即 `feature block`。
+4. reviewer 使用不同 owner 身份记录评审。
+5. 完成后推送代码与状态，运行 `session close`，再清理 workspace。
 
-命令检查分支保护、必需状态检查、强制推送限制、`CODEOWNERS` 和 ruleset。
-
-结论有三种：
-
-- `PASS`：已确认满足要求。
-- `FAIL`：已确认缺失或不合规，命令以失败结束。
-- `UNKNOWN`：当前 token 权限不足，无法确认。它是警告，不会被当作失败。
-
-详细解释见[审核与结论](/reference/review-results#github-仓库治理结论)。
+<Warning>
+  Git claim 是可审计的协作协议，不是实时分布式锁。跨机器工作必须同步远端，不能只依赖本地 `feature_list.json`。
+</Warning>
