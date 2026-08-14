@@ -1,107 +1,155 @@
 ---
 title: "命令参考"
-description: "SDLC Harness CLI 命令、参数和使用场景。"
+description: "全部 SDLC Harness CLI 命令、参数、前置条件和结果。"
 icon: "terminal"
 ---
 
-所有命令都在目标仓库根目录运行。使用 `npx sdlc-harness`，或在全局安装后使用 `sdlc-harness`。
+所有命令都在目标仓库根目录运行。本文省略重复的 `npx @caesarlo/sdlc-harness` 前缀；未安装 CLI 时请加上该前缀。
 
-## 初始化与状态
+```bash
+npx @caesarlo/sdlc-harness --help
+```
+
+## 初始化
 
 | 命令 | 作用 |
 | --- | --- |
-| `sdlc-harness init [--force]` | 在空仓库或新仓库中生成完整 harness。`--force` 允许覆盖冲突文件，请谨慎使用。 |
-| `sdlc-harness adopt` | 向已有仓库添加缺失文件，不覆盖已有文件。 |
-| `sdlc-harness validate` | 运行全部结构与治理检查。失败时以非零状态退出。 |
-| `sdlc-harness status` | 以 JSON 输出各状态功能数量、当前功能和里程碑数量。 |
+| `init [--force]` | 生成完整协议；遇到已有文件默认停止并列出冲突 |
+| `adopt` | 只插入缺失文件；已有 `AGENTS.md` 时生成 sidecar |
+
+`--force` 只应在确认允许覆盖 `init` 报告的冲突时使用。
+
+## 仓库状态与审核
+
+| 命令 | 输出与退出状态 |
+| --- | --- |
+| `validate` | 运行全部治理检查；失败输出分类错误并返回非零 |
+| `status` | 输出功能、审批、追溯和下一步的 JSON 摘要 |
+| `traceability` | 输出完整追溯矩阵；存在实际缺口时返回非零 |
 
 ## 规划
 
-| 命令 | 作用 |
+```bash
+sdlc-harness new-milestone
+sdlc-harness new-feature
+sdlc-harness new-feature --input <repo-relative-json-file>
+```
+
+前两者交互创建。`--input` 适合 Agent 自动化，文件必须位于仓库内，且不能注入 claim、evidence、workspace 或完成状态。
+
+## 功能生命周期
+
+```bash
+sdlc-harness feature start <feature-id> [--owner <name>] [--actor <id>] [--ttl <minutes>]
+sdlc-harness feature complete <feature-id> [--owner <name>]
+sdlc-harness feature block <feature-id> --reason <text> [--owner <name>]
+sdlc-harness feature reopen <feature-id> [--actor <id>]
+```
+
+| 子命令 | 状态变化 |
 | --- | --- |
-| `sdlc-harness new-milestone` | 通过交互问答创建里程碑。 |
-| `sdlc-harness new-feature` | 通过交互问答创建功能及其行为、验证、依赖和来源引用。 |
+| `start` | 检查 ready、依赖和 WIP，认领并进入 `in_progress` |
+| `complete` | 要求有效 claim、依赖、当前 commit 验证和后续独立 review，再进入 `passing` |
+| `block` | 记录 blocker、释放 claim并进入 `blocked` |
+| `reopen` | 清除 blocker，从 `blocked` 返回 `not_started` |
 
 ## 验证与证据
 
-### 运行功能验证
-
 ```bash
 sdlc-harness verify <feature-id>
+sdlc-harness evidence manual <feature-id> \
+  --verification <1-based-index> --result <passed|failed> \
+  --notes <text> [--actor <id>]
+sdlc-harness review record <feature-id> \
+  --reviewer <id> --summary <text> [--result passed|failed]
+sdlc-harness evidence approval <artifact> --actor <id> --summary <text>
+sdlc-harness evidence import <feature-id> --ci-run <run-id> \
+  [--owner <github-owner>] [--repo <github-repo>]
 ```
 
-实际执行功能的所有 `verification` 命令，并写入测试证据。这是本地生成 `kind: "test"` 证据的受支持方式。
-
-### 导入 GitHub Actions 证据
-
-```bash
-sdlc-harness evidence import <feature-id> --ci-run <run-id> [--owner <o>] [--repo <r>]
-```
-
-工具会通过 `gh api` 独立确认运行存在、已经完成且结论成功。仍在运行、失败或不存在的 run 不会被导入。
+- `verify` 实际运行自动 verification，并记录 test 证据。
+- `evidence manual` 只能绑定声明为 manual 的验证项。
+- `review record` 绑定当前 commit；完成门禁要求 reviewer 不同于 claim owner。
+- `evidence approval` 记录与制品内容哈希绑定的项目级审批。
+- `evidence import` 只接受 GitHub 已完成且成功的真实 run。
 
 ## claim 与租约
-
-<Note>
-  这一节只在 `harness.config.json` 的 `collaborationMode` 为 `"team"` 时需要手动操作。默认的
-  `"solo"` 模式下，`sdlc-harness verify` 会在运行前自动为 `defaultOwner` 认领功能、结束后自动释放，
-  你通常不需要直接调用 `claim`/`release`。两种模式的取舍见[配置参考](/reference/configuration#harness-config-json)。
-</Note>
 
 ```bash
 sdlc-harness claim <feature-id> [--owner <name>] [--actor <id>] [--ttl <minutes>]
 sdlc-harness claim --next [--owner <name>] [--actor <id>] [--ttl <minutes>]
 sdlc-harness claim renew <feature-id> [--owner <name>] [--ttl <minutes>]
-sdlc-harness claim <feature-id> --takeover-expired [--owner <name>]
+sdlc-harness claim <feature-id> --takeover-expired [--owner <name>] [--actor <id>]
+sdlc-harness claim <feature-id> --push [--remote origin] [--branch main]
 sdlc-harness release <feature-id> [--owner <name>]
 ```
 
-`--next` 只选择 `not_started`、未被有效认领且所有依赖已 `passing` 的功能。
+`--next` 选择依赖已 `passing`、未被有效认领的 `not_started` 功能，并按 priority 和列表顺序排序。默认租约为 120 分钟。`--takeover-expired` 只允许接管已过期 claim。`release` 将 `in_progress` 恢复为 `not_started`。
 
-跨机器同步 claim：
-
-```bash
-sdlc-harness claim <feature-id> --push [--remote origin] [--branch main]
-```
+<Note>
+  Solo 模式通常无需手动 claim；`verify` 会按需为 `defaultOwner` 临时认领并释放。Team 模式必须事先持有有效 claim。
+</Note>
 
 ## workspace
 
-| 命令 | 作用 |
-| --- | --- |
-| `workspace create <feature-id> [--base <branch>]` | 为已认领功能创建 worktree 和 `feature/<id>` 分支。 |
-| `workspace status` | 以 JSON 列出 workspace、claim 和磁盘状态。 |
-| `workspace remove <feature-id> [--force]` | 移除 workspace。未提交或未推送内容默认阻止删除。 |
-| `workspace prune` | 清理 claim 已释放或过期的安全 workspace；不安全项会被跳过。 |
-
-完整命令写法：
-
 ```bash
-sdlc-harness workspace create <feature-id> --base main
+sdlc-harness workspace create <feature-id> [--base <branch>]
 sdlc-harness workspace status
-sdlc-harness workspace remove <feature-id>
-sdlc-harness workspace prune
+sdlc-harness workspace remove <feature-id> [--force]
+sdlc-harness workspace prune [--force]
 ```
+
+create 为已认领功能创建 `.worktrees/<id>` 和 `feature/<id>` 分支。remove 默认拒绝删除含未提交或未推送工作的 workspace。prune 只考虑 claim 已释放或过期的 workspace，绝不触碰活跃 claim。
 
 ## GitHub provider
 
 ```bash
-sdlc-harness provider github check [--owner <o>] [--repo <r>] [--branch <b>]
+sdlc-harness provider github check \
+  [--owner <github-owner>] [--repo <github-repo>] [--branch main]
 ```
 
-未提供 owner/repo 时，工具会尝试从 `origin` URL 推断。该命令需要 GitHub CLI `gh`。
+未显式指定仓库时从 `origin` 推断。结果为 `PASS`、`FAIL` 或因 token 权限不足而无法确认的 `UNKNOWN`。
 
-## 常用参数
+## 项目环境
 
-| 参数 | 默认值 | 说明 |
-| --- | --- | --- |
-| `--owner <name>` | `harness.config.json` 的 `defaultOwner` | claim 负责人 |
-| `--actor <id>` | owner | 区分同一 owner 下的 Agent 会话 |
-| `--ttl <minutes>` | `120` | claim 租约时长 |
-| `--remote <name>` | `origin` | `claim --push` 使用的远程 |
-| `--branch <name>` | `main` | push 或 provider 检查的目标分支 |
-| `--base <branch>` | `main` | 创建 workspace 的基线分支 |
-| `--force` | 关闭 | 覆盖初始化冲突或强制移除 workspace，具体取决于命令 |
+```bash
+sdlc-harness env
+sdlc-harness env check
+```
+
+`env` 列出已配置命令。`env check` 依次运行已配置的 `bootstrap`、`verify`、`e2e`、`health`，第一次失败后停止并返回非零。
+
+## 会话收尾
+
+```bash
+sdlc-harness session close
+```
+
+只读运行 `validate`、环境检查并汇总 Git 与功能状态。它不会自动提交、释放 claim 或清理 workspace。
+
+## 反馈
+
+```bash
+sdlc-harness feedback log \
+  --source <text> --severity <S1|S2|S3|S4> \
+  --observation <text> \
+  --disposition <Actioned|Deferred|Declined|Monitoring> \
+  [--detail <text>] [--date <YYYY-MM-DD>]
+```
+
+新条目写入反馈日志顶部。`Deferred` 和 `Declined` 必须说明原因。
+
+## 通用默认值
+
+| 参数 | 默认值 |
+| --- | --- |
+| `--owner` | `harness.config.json.defaultOwner` |
+| `--actor` | 未指定时按相应命令的 owner/默认 owner 处理 |
+| `--ttl` | 120 分钟 |
+| `--remote` | `origin` |
+| `--branch` | `main` |
+| `--base` | `main` |
 
 <Warning>
-  `--force` 可能覆盖文件或移除含未保存工作的 workspace。先阅读命令报告的冲突或风险。
+  `init --force` 和 `workspace ... --force` 可能覆盖文件或丢弃未保存工作。先阅读命令输出的准确目标和风险。
 </Warning>

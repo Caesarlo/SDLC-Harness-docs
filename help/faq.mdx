@@ -1,0 +1,53 @@
+---
+title: "常见问题"
+description: "关于定位、证据、Solo/Team、Git 和适用范围的常见问题。"
+icon: "circle-question"
+---
+
+## 它会替代测试框架吗？
+
+不会。你仍使用 Jest、Vitest、pytest、Playwright 等项目工具。SDLC Harness 负责执行声明的命令、记录结果并检查完成证据。
+
+## 它会替代项目管理工具吗？
+
+不会。`feature_list.json` 提供靠近代码、可被 Agent 执行的交付状态。团队仍可使用 Linear、Jira 等进行更高层规划，但应明确哪一侧是开发执行状态源。
+
+## `validate` 会运行测试吗？
+
+不会。`verify` 运行功能 verification；`env check` 运行项目级环境命令；`validate` 只审核仓库状态和证据。
+
+## 为什么 `verify` 通过还不能完成？
+
+测试通过只是条件之一。还需要有效 claim、依赖通过、当前 commit 的全部验证证据，以及在最新验证之后由不同 reviewer 记录的通过评审。
+
+## Solo 模式为什么仍有 claim 字段？
+
+底层仍用 claim 防止同一台机器上的两个 Agent 并发写入。Solo 只隐藏常规操作负担：`verify` 会按需临时认领和释放。
+
+## 多个 Agent 可以使用同一个 owner 吗？
+
+可以，用不同 actor 区分会话。但 WIP 上限按 owner 计算，且同一功能仍只能有一个 claim。独立 reviewer 必须使用不同于 claim owner 的身份。
+
+## 可以手改 `feature_list.json` 吗？
+
+可以维护计划性字段，但 claim、workspace、证据、blocker 和状态转换应使用 CLI。`new-feature --input` 是 Agent 创建功能的安全非交互入口。
+
+## 哪些文件要提交？
+
+提交协议、配置、`feature_list.json`、需求/ADR/工作流、Git hook、CI 模板和 `.harness/events/*.jsonl`。不要提交 `.harness/last-validated-features.json` 与 `.worktrees/`。
+
+## 功能已经 passing，但需要修改怎么办？
+
+创建一个新功能描述回归、增强或迁移。默认单调规则会阻止旧功能悄悄回退，保留历史结论的可解释性。
+
+## 没有部署目标的库也能用吗？
+
+可以。设置 `deploymentMode: "none"`，并根据是否需要反馈日志选择 `observabilityMode: "feedback-only"` 或 `"none"`。
+
+## claim 是分布式锁吗？
+
+不是。它是存储在 Git 状态中的可审计租约。跨机器使用 `claim --push` 并及时同步远端，仍要接受 Git 无实时锁的限制。
+
+## 它能证明需求是正确的吗？
+
+不能。它能证明需求、功能、验收标准和证据之间存在可检查关系，但产品判断、需求质量和测试充分性仍需要人和团队负责。
