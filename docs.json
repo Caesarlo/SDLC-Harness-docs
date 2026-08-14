@@ -17,14 +17,23 @@
           "index",
           "concepts/why-sdlc-harness",
           "quickstart",
-          "concepts/how-it-works"
+          "concepts/how-it-works",
+          "getting-started/generated-files",
+          "getting-started/agent-onboarding"
         ]
       },
       {
         "group": "使用指南",
         "pages": [
           "guides/daily-workflow",
-          "guides/team-collaboration"
+          "guides/feature-lifecycle",
+          "guides/evidence-and-review",
+          "guides/traceability",
+          "guides/team-collaboration",
+          "guides/environment-and-session",
+          "guides/ci-and-github",
+          "guides/feedback-loop",
+          "guides/best-practices"
         ]
       },
       {
@@ -32,13 +41,16 @@
         "pages": [
           "reference/review-results",
           "reference/commands",
-          "reference/configuration"
+          "reference/configuration",
+          "reference/feature-list",
+          "reference/status-and-traceability-output"
         ]
       },
       {
         "group": "帮助",
         "pages": [
-          "help/troubleshooting"
+          "help/troubleshooting",
+          "help/faq"
         ]
       }
     ]
