@@ -1,111 +1,115 @@
 ---
 title: "快速开始"
-description: "安装 SDLC Harness，初始化仓库，并完成第一次验证。"
+description: "用 10 分钟接入 SDLC Harness，并完成第一个功能的验证、评审和审核。"
 icon: "rocket"
 ---
 
 ## 前置条件
 
-开始前请确认：
+- Node.js 22 或更高版本。
+- 在目标项目的仓库根目录运行命令。
+- 如需 GitHub 治理检查或 CI 证据导入，安装并登录 GitHub CLI `gh`。
 
-- 已安装 Node.js 22 或更高版本。
-- 当前目录是你要管理的代码仓库。
-- 如果要使用 GitHub 检查或导入 GitHub Actions 证据，已安装并登录 GitHub CLI `gh`。
+本文使用无需预安装的完整写法：`npx @caesarlo/sdlc-harness`。如果已全局安装，可以改用 `sdlc-harness`。
 
-## 1. 安装仓库协议
+## 1. 接入仓库
 
 <Tabs>
   <Tab title="已有仓库">
-    在项目根目录运行：
-
     ```bash
     cd your-project
-    npx sdlc-harness adopt
+    npx @caesarlo/sdlc-harness adopt
     ```
 
-    `adopt` 只补充缺失文件，不覆盖现有文件。命令会列出被保留的文件，你需要手动确认它们是否已包含必要规则。
+    `adopt` 只写入缺失文件，不覆盖已有文件。如果仓库已经有 `AGENTS.md`，工具会生成 `AGENTS.sdlc-harness.md`；按终端提示从原 `AGENTS.md` 引用它，否则新 Agent 会话无法发现 harness。
   </Tab>
   <Tab title="空仓库或新仓库">
     ```bash
     mkdir your-project
     cd your-project
-    npx sdlc-harness init
+    npx @caesarlo/sdlc-harness init
     ```
 
-    `init` 会生成完整协议。如果目标文件已存在且内容冲突，命令会停止，避免意外覆盖。
+    `init` 遇到已有目标文件会停止并列出冲突。只有确认允许覆盖时才使用 `--force`。
   </Tab>
 </Tabs>
 
-安装后，仓库会出现 `AGENTS.md`、`feature_list.json`、`harness.config.json`、工作流文档、Git hook 和 CI 模板。
+生成内容详见[生成的文件](/getting-started/generated-files)。
 
-## 2. 启用提交前检查
+## 2. 启用提交前审核
 
 ```bash
 git config core.hooksPath .githooks
 ```
 
-这项配置只需在每个本地 clone 中执行一次。之后每次提交都会运行 `sdlc-harness validate`。
+每个 clone 只需配置一次。之后 pre-commit hook 会运行 `validate`。
 
-## 3. 运行第一次审核
-
-```bash
-npx sdlc-harness validate
-```
-
-成功时会看到：
-
-```text
-All checks passed.
-```
-
-失败时会看到带分类的具体原因：
-
-```text
-FAILED with 1 error(s):
-  - [pass-gate] Feature M1-CHECKOUT-003 is passing but has no evidence entry with kind "review"
-```
-
-按照错误前缀定位问题。完整解释见[审核与结论](/reference/review-results)。
-
-## 4. 查看当前工作状态
+## 3. 建立基线
 
 ```bash
-npx sdlc-harness status
+npx @caesarlo/sdlc-harness validate
+npx @caesarlo/sdlc-harness status
 ```
 
-命令会输出 JSON，包含各状态的功能数量、正在进行的功能和里程碑数量。它适合开发者阅读，也适合脚本和 Agent 使用。
+成功时输出 `All checks passed.`。如果失败，先修复带分类前缀的错误，再开始新工作，这样能区分原有问题和本次改动。
+
+## 4. 让 Agent 读取协议
+
+可以直接告诉编码 Agent：
+
+```text
+先读取仓库根目录的 AGENTS.md、feature_list.json 和当前 progress.md，
+按照 SDLC Harness 的 Routing Map 选择入口，然后只处理一个 ready 功能。
+```
+
+已有 `AGENTS.md` 的接入细节见 [Agent 接入](/getting-started/agent-onboarding)。
 
 ## 5. 完成第一个功能
 
 <Steps>
-  <Step title="让 Agent 读取仓库协议">
-    告诉你的编码 Agent：先读取仓库根目录的 `AGENTS.md`，再继续工作。
-  </Step>
-  <Step title="创建或选择一个功能">
-    可以运行交互式命令：
+  <Step title="选择或创建功能">
+    优先从 `status` 的 `readyFeatures` 选择。需要新功能时可以交互创建：
 
     ```bash
-    npx sdlc-harness new-feature
+    npx @caesarlo/sdlc-harness new-feature
     ```
   </Step>
-  <Step title="实现并运行真实验证">
+  <Step title="开始功能">
     ```bash
-    npx sdlc-harness verify <feature-id>
+    npx @caesarlo/sdlc-harness feature start <feature-id>
     ```
 
-    `verify` 会执行该功能在 `verification` 中声明的命令，并记录测试证据。
+    该命令会确认依赖已通过、功能可认领且未超过 owner 的 WIP 上限，然后原子地认领并切换到 `in_progress`。
   </Step>
-  <Step title="完成评审并通过总审核">
-    在 `feature_list.json` 中记录一条 `kind: "review"` 的证据，确认验收后把功能状态设为 `passing`，然后运行：
-
+  <Step title="实现并运行验证">
     ```bash
-    npx sdlc-harness validate
+    npx @caesarlo/sdlc-harness verify <feature-id>
     ```
+
+    `verify` 实际执行该功能声明的自动验证命令，并记录退出码、时间和当前 commit SHA。
+  </Step>
+  <Step title="记录独立评审">
+    ```bash
+    npx @caesarlo/sdlc-harness review record <feature-id> \
+      --reviewer reviewer-id \
+      --summary "行为、测试和边界检查通过"
+    ```
+
+    reviewer 不能是该功能的 claim owner，且通过评审必须晚于最新一次通过验证。
+  </Step>
+  <Step title="完成并审核仓库">
+    ```bash
+    npx @caesarlo/sdlc-harness feature complete <feature-id>
+    npx @caesarlo/sdlc-harness validate
+    npx @caesarlo/sdlc-harness session close
+    ```
+
+    `feature complete` 只有在 claim、依赖、当前 commit 验证和后续评审都有效时才会把状态改为 `passing`。
   </Step>
 </Steps>
 
 <Warning>
-  `verify` 不会自动把功能设为 `passing`。测试通过只是完成条件之一；你仍需完成 review，并明确更新功能状态。
+  不要直接手改 claim、证据或 `passing` 状态来绕过生命周期命令。CLI 使用原子写入并记录审计事件，能避免并发覆盖和不一致状态。
 </Warning>
 
-下一步：阅读[日常工作流](/guides/daily-workflow)，了解从规划到交付的完整操作。
+下一步阅读[日常工作流](/guides/daily-workflow)或[功能生命周期](/guides/feature-lifecycle)。

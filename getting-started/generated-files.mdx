@@ -1,0 +1,55 @@
+---
+title: "生成的文件"
+description: "了解 init 或 adopt 写入的仓库协议、自动化文件和版本控制边界。"
+icon: "folder-tree"
+---
+
+`init` 和 `adopt` 把 SDLC Harness 的协议直接安装到目标仓库。`init` 适合空仓库；`adopt` 适合已有项目并且不会覆盖现有文件。
+
+## 核心状态与协议
+
+| 路径 | 用途 | 是否建议提交 |
+| --- | --- | --- |
+| `AGENTS.md` | Agent 启动规则、Routing Map 和会话要求 | 是 |
+| `AGENTS.sdlc-harness.md` | 已有 `AGENTS.md` 时生成的 sidecar 协议 | 是，并从原文件引用 |
+| `feature_list.json` | 里程碑、功能、依赖、状态、claim、workspace 和证据 | 是 |
+| `feature_list.schema.json` | `feature_list.json` 的机器可读结构 | 是 |
+| `harness.config.json` | 项目级协作、阶段和环境命令配置 | 是 |
+| `progress.md` | 跨会话检查点 | 是 |
+
+## 设计与工作流文档
+
+`docs/workflow/` 包含九阶段指南；`docs/product/` 保存需求、用户故事和反馈模板；`docs/architecture/` 保存架构概览；`docs/adr/` 保存架构决策。
+
+这些不是一次性脚手架。Agent 会通过 `AGENTS.md` 路由到相关文档，`validate` 也会检查来源引用、ADR 覆盖和追溯关系。
+
+## 自动化文件
+
+| 路径 | 用途 |
+| --- | --- |
+| `.githooks/pre-commit` | 提交前运行 `validate` |
+| `.github/workflows/ci.yml` | 在 CI 中审核仓库并预留项目检查 |
+| `.github/workflows/deploy.yml` | 部署前审核并预留真实部署步骤 |
+| `.claude/skills/` | 为 Claude Code 提供工作流发现入口 |
+
+Git hook 不会自动启用：
+
+```bash
+git config core.hooksPath .githooks
+```
+
+生成的 CI 和部署模板会在真实项目命令未配置时失败关闭，不会用占位输出冒充成功。接入后应根据仓库实际情况完善它们。
+
+## 运行状态
+
+| 路径 | 行为 |
+| --- | --- |
+| `.harness/events/*.jsonl` | 追加式审计日志；建议提交并跨机器同步 |
+| `.harness/last-validated-features.json` | 成功审核生成的派生快照；不提交 |
+| `.worktrees/` | 本地 Git worktree；不提交 |
+
+模板生成的 `.gitignore` 会忽略派生快照和 `.worktrees/`，不会忽略审计事件或 `feature_list.json`。
+
+<Warning>
+  `init --force` 会覆盖它预先报告的冲突文件。已有仓库优先使用 `adopt`，并逐项检查其跳过列表。
+</Warning>
