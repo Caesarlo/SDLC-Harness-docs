@@ -117,6 +117,8 @@ topic: authentication
 HARNESS_BASE_REF=origin/main npx @caesarlo/sdlc-harness validate
 ```
 
+[查看 `validate` 命令说明 →](/reference/command-repository#validate)
+
 也支持 GitHub Actions 的 `GITHUB_BASE_REF`。没有可用 Git 基线时回退到 `.harness/last-validated-features.json`；该文件是派生缓存，不应提交。
 
 更多状态字段见 [`feature_list.json` 参考](/reference/feature-list)。

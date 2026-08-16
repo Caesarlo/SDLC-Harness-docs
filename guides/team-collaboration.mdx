@@ -26,6 +26,8 @@ npx @caesarlo/sdlc-harness claim M1-AUTH-001 \
   --owner alice --actor codex-1 --ttl 120
 ```
 
+[查看 `claim` 参数说明 →](/reference/command-claim#claim)
+
 ## 租约
 
 长期工作应在过期前续租：
@@ -34,12 +36,16 @@ npx @caesarlo/sdlc-harness claim M1-AUTH-001 \
 npx @caesarlo/sdlc-harness claim renew M1-AUTH-001 --owner alice --ttl 120
 ```
 
+[查看 `claim renew` 参数说明 →](/reference/command-claim#renew)
+
 只有租约已过期时才能接管：
 
 ```bash
 npx @caesarlo/sdlc-harness claim M1-AUTH-001 \
   --takeover-expired --owner bob --actor claude-2
 ```
+
+[查看过期接管参数说明 →](/reference/command-claim#takeover-expired)
 
 接管会保留前任 owner 信息供审计。活跃租约不会被强行覆盖。
 
@@ -53,6 +59,8 @@ npx @caesarlo/sdlc-harness claim M1-AUTH-001 \
 npx @caesarlo/sdlc-harness claim --next --owner alice
 ```
 
+[查看 `claim --next` 参数说明 →](/reference/command-claim#next)
+
 只会选择 `not_started`、未持有有效 claim 且依赖全部 `passing` 的功能。priority 越小越优先。
 
 ## 跨机器同步
@@ -60,6 +68,8 @@ npx @caesarlo/sdlc-harness claim --next --owner alice
 ```bash
 npx @caesarlo/sdlc-harness claim M1-AUTH-001 --owner alice --push
 ```
+
+[查看 `claim --push` 参数说明 →](/reference/command-claim#push)
 
 `--push` 默认提交到 `origin/main`，可用 `--remote` 和 `--branch` 调整。两个设备仍可能先在本地同时认领；推送冲突时工具会同步远端并尝试回退到下一个 ready 功能。
 
@@ -70,6 +80,8 @@ npx @caesarlo/sdlc-harness workspace create M1-AUTH-001 --base main
 npx @caesarlo/sdlc-harness workspace status
 ```
 
+参数说明：[创建 workspace](/reference/command-workspace#create) · [查看 workspace](/reference/command-workspace#status)
+
 workspace 位于 `.worktrees/<feature-id>`，分支为 `feature/<id>`。状态命令会同时显示 claim 是否活跃和路径是否仍存在。
 
 完成并推送后移除：
@@ -78,6 +90,8 @@ workspace 位于 `.worktrees/<feature-id>`，分支为 `feature/<id>`。状态�
 npx @caesarlo/sdlc-harness workspace remove M1-AUTH-001
 npx @caesarlo/sdlc-harness workspace prune
 ```
+
+参数说明：[移除 workspace](/reference/command-workspace#remove) · [批量清理 workspace](/reference/command-workspace#prune)
 
 remove 会拒绝脏或未推送 workspace。prune 只清理 claim 已释放或过期的安全项，绝不移除活跃 claim 的 workspace。
 

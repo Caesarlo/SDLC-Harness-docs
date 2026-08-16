@@ -35,6 +35,8 @@ npx @caesarlo/sdlc-harness feedback log \
   --detail "创建 M2-CHECKOUT-004"
 ```
 
+[查看 `feedback log` 参数说明 →](/reference/command-feedback#log)
+
 严重级别为 `S1`、`S2`、`S3`、`S4`；处理结论为 `Actioned`、`Deferred`、`Declined`、`Monitoring`。`Deferred` 和 `Declined` 必须在 detail 中解释原因。
 
 命令会把新条目写到 `docs/product/feedback-log.md` 顶部。手工编辑也可以，但 `validate` 的 `[feedback-log]` 会检查日期、来源、观察、严重级别和处理结论。

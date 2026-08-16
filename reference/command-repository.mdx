@@ -1,0 +1,61 @@
+---
+title: "仓库与审核命令"
+description: "init、adopt、validate、status 和 traceability 的参数、输出与退出状态。"
+icon: "folder-check"
+---
+
+这些命令负责接入 SDLC Harness、审核仓库状态以及读取治理结果。除 `init` 外，命令都要求当前目录已经包含 SDLC Harness 生成的文件。
+
+## `init` {#init}
+
+在当前目录生成完整的 SDLC Harness 协议文件。
+
+```bash
+npx @caesarlo/sdlc-harness init [--force]
+```
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- |
+| `--force` | boolean | 否 | `false` | 覆盖 `init` 检测到的冲突文件。未指定时，只要存在冲突就停止且不写入任何文件。 |
+
+`init` 成功时输出写入文件数并返回 `0`。存在冲突或写入失败时返回非零。`--force` 会覆盖已有内容，先阅读冲突列表再使用。
+
+## `adopt` {#adopt}
+
+把 SDLC Harness 接入已有项目，只写入缺失文件。
+
+```bash
+npx @caesarlo/sdlc-harness adopt
+```
+
+该命令没有参数。已有文件保持不变；如果仓库已有 `AGENTS.md`，Harness 规则会写入 `AGENTS.sdlc-harness.md`，你必须从原有 `AGENTS.md` 引用它。
+
+## `validate` {#validate}
+
+运行全部仓库治理审核。
+
+```bash
+npx @caesarlo/sdlc-harness validate
+```
+
+该命令没有参数。全部审核通过时输出 `All checks passed.` 并返回 `0`；任何治理规则失败时输出分类错误并返回非零。`validate` 审核仓库记录是否合规，不执行功能声明的验证命令。
+
+## `status` {#status}
+
+输出当前功能、审批、追溯缺口和建议下一步的 JSON 摘要。
+
+```bash
+npx @caesarlo/sdlc-harness status
+```
+
+该命令没有参数，也不会修改仓库。字段定义见[状态与追溯输出](/reference/status-and-traceability-output#status)。
+
+## `traceability` {#traceability}
+
+构建并输出完整追溯矩阵。
+
+```bash
+npx @caesarlo/sdlc-harness traceability
+```
+
+该命令没有参数，也不会修改仓库。矩阵没有实际缺口时返回 `0`；存在缺失或失效引用时返回非零。字段定义见[状态与追溯输出](/reference/status-and-traceability-output#traceability)。

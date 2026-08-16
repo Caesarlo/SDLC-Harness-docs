@@ -1,6 +1,6 @@
 ---
 title: "命令参考"
-description: "全部 SDLC Harness CLI 命令、参数、前置条件和结果。"
+description: "全部 SDLC Harness CLI 命令及其参数说明入口。"
 icon: "terminal"
 ---
 
@@ -10,146 +10,128 @@ icon: "terminal"
 npx @caesarlo/sdlc-harness --help
 ```
 
-## 初始化
+<CardGroup cols={2}>
+  <Card title="仓库与审核" icon="folder-check" href="/reference/command-repository" cta="查看参数" arrow>
+    接入 Harness、审核仓库并读取状态与追溯矩阵。
+  </Card>
+  <Card title="规划" icon="list-check" href="/reference/command-planning" cta="查看参数" arrow>
+    交互或从 JSON 创建里程碑和功能。
+  </Card>
+  <Card title="功能生命周期" icon="diagram-project" href="/reference/command-feature" cta="查看参数" arrow>
+    启动、完成、阻塞和重新打开功能。
+  </Card>
+  <Card title="验证与证据" icon="fingerprint" href="/reference/command-evidence" cta="查看参数" arrow>
+    执行验证、记录评审、人工证据和 CI 证据。
+  </Card>
+  <Card title="Claim 与租约" icon="user-lock" href="/reference/command-claim" cta="查看参数" arrow>
+    认领、续租、接管、推送和释放功能。
+  </Card>
+  <Card title="Workspace" icon="code-branch" href="/reference/command-workspace" cta="查看参数" arrow>
+    创建和清理 Git worktree 隔离目录。
+  </Card>
+  <Card title="GitHub" icon="github" href="/reference/command-github" cta="查看参数" arrow>
+    检查仓库保护配置。
+  </Card>
+  <Card title="环境与会话" icon="laptop-code" href="/reference/command-environment" cta="查看参数" arrow>
+    检查项目环境并汇总会话结束状态。
+  </Card>
+  <Card title="反馈" icon="comment-dots" href="/reference/command-feedback" cta="查看参数" arrow>
+    写入结构化反馈日志。
+  </Card>
+</CardGroup>
 
-| 命令 | 作用 |
-| --- | --- |
-| `init [--force]` | 生成完整协议；遇到已有文件默认停止并列出冲突 |
-| `adopt` | 只插入缺失文件；已有 `AGENTS.md` 时生成 sidecar |
+## 仓库与审核
 
-`--force` 只应在确认允许覆盖 `init` 报告的冲突时使用。
-
-## 仓库状态与审核
-
-| 命令 | 输出与退出状态 |
-| --- | --- |
-| `validate` | 运行全部治理检查；失败输出分类错误并返回非零 |
-| `status` | 输出功能、审批、追溯和下一步的 JSON 摘要 |
-| `traceability` | 输出完整追溯矩阵；存在实际缺口时返回非零 |
+| 命令 | 作用 | 参数说明 |
+| --- | --- | --- |
+| `init [--force]` | 生成完整协议；遇到已有文件默认停止并列出冲突 | [查看 `init` 参数 →](/reference/command-repository#init) |
+| `adopt` | 只插入缺失文件；已有 `AGENTS.md` 时生成 sidecar | [查看 `adopt` 说明 →](/reference/command-repository#adopt) |
+| `validate` | 运行全部治理审核；失败时返回非零 | [查看 `validate` 说明 →](/reference/command-repository#validate) |
+| `status` | 输出功能、审批、追溯和下一步的 JSON 摘要 | [查看 `status` 说明 →](/reference/command-repository#status) |
+| `traceability` | 输出完整追溯矩阵；存在实际缺口时返回非零 | [查看 `traceability` 说明 →](/reference/command-repository#traceability) |
 
 ## 规划
 
-```bash
-sdlc-harness new-milestone
-sdlc-harness new-feature
-sdlc-harness new-feature --input <repo-relative-json-file>
-```
-
-前两者交互创建。`--input` 适合 Agent 自动化，文件必须位于仓库内，且不能注入 claim、evidence、workspace 或完成状态。
+| 命令 | 作用 | 参数说明 |
+| --- | --- | --- |
+| `new-feature [--input <path>]` | 交互创建功能，或从仓库内 JSON 文件导入 | [查看 `new-feature` 参数 →](/reference/command-planning#new-feature) |
+| `new-milestone` | 交互创建里程碑 | [查看 `new-milestone` 说明 →](/reference/command-planning#new-milestone) |
 
 ## 功能生命周期
 
-```bash
-sdlc-harness feature start <feature-id> [--owner <name>] [--actor <id>] [--ttl <minutes>]
-sdlc-harness feature complete <feature-id> [--owner <name>]
-sdlc-harness feature block <feature-id> --reason <text> [--owner <name>]
-sdlc-harness feature reopen <feature-id> [--actor <id>]
-```
+| 命令 | 状态变化 | 参数说明 |
+| --- | --- | --- |
+| `feature start <feature-id>` | 检查 ready、依赖和 WIP，认领并进入 `in_progress` | [查看 `start` 参数 →](/reference/command-feature#start) |
+| `feature complete <feature-id>` | 检查证据和独立 review，再进入 `passing` | [查看 `complete` 参数 →](/reference/command-feature#complete) |
+| `feature block <feature-id>` | 记录 blocker、释放 claim 并进入 `blocked` | [查看 `block` 参数 →](/reference/command-feature#block) |
+| `feature reopen <feature-id>` | 清除 blocker，从 `blocked` 返回 `not_started` | [查看 `reopen` 参数 →](/reference/command-feature#reopen) |
 
-| 子命令 | 状态变化 |
-| --- | --- |
-| `start` | 检查 ready、依赖和 WIP，认领并进入 `in_progress` |
-| `complete` | 要求有效 claim、依赖、当前 commit 验证和后续独立 review，再进入 `passing` |
-| `block` | 记录 blocker、释放 claim并进入 `blocked` |
-| `reopen` | 清除 blocker，从 `blocked` 返回 `not_started` |
+## 验证、评审与证据
 
-## 验证与证据
+| 命令 | 作用 | 参数说明 |
+| --- | --- | --- |
+| `verify <feature-id>` | 真实执行自动验证并记录 test 证据 | [查看 `verify` 参数 →](/reference/command-evidence#verify) |
+| `evidence manual <feature-id>` | 为 manual 验证项记录人工证据 | [查看 `evidence manual` 参数 →](/reference/command-evidence#manual) |
+| `review record <feature-id>` | 为当前 commit 记录评审结论 | [查看 `review record` 参数 →](/reference/command-evidence#review-record) |
+| `evidence approval <artifact>` | 记录与文件内容哈希绑定的项目级审批 | [查看 `evidence approval` 参数 →](/reference/command-evidence#approval) |
+| `evidence import <feature-id>` | 验证并导入成功的 GitHub Actions run | [查看 `evidence import` 参数 →](/reference/command-evidence#import) |
 
-```bash
-sdlc-harness verify <feature-id>
-sdlc-harness evidence manual <feature-id> \
-  --verification <1-based-index> --result <passed|failed> \
-  --notes <text> [--actor <id>]
-sdlc-harness review record <feature-id> \
-  --reviewer <id> --summary <text> [--result passed|failed]
-sdlc-harness evidence approval <artifact> --actor <id> --summary <text>
-sdlc-harness evidence import <feature-id> --ci-run <run-id> \
-  [--owner <github-owner>] [--repo <github-repo>]
-```
+## Claim 与租约
 
-- `verify` 实际运行自动 verification，并记录 test 证据。
-- `evidence manual` 只能绑定声明为 manual 的验证项。
-- `review record` 绑定当前 commit；完成门禁要求 reviewer 不同于 claim owner。
-- `evidence approval` 记录与制品内容哈希绑定的项目级审批。
-- `evidence import` 只接受 GitHub 已完成且成功的真实 run。
-
-## claim 与租约
-
-```bash
-sdlc-harness claim <feature-id> [--owner <name>] [--actor <id>] [--ttl <minutes>]
-sdlc-harness claim --next [--owner <name>] [--actor <id>] [--ttl <minutes>]
-sdlc-harness claim renew <feature-id> [--owner <name>] [--ttl <minutes>]
-sdlc-harness claim <feature-id> --takeover-expired [--owner <name>] [--actor <id>]
-sdlc-harness claim <feature-id> --push [--remote origin] [--branch main]
-sdlc-harness release <feature-id> [--owner <name>]
-```
-
-`--next` 选择依赖已 `passing`、未被有效认领的 `not_started` 功能，并按 priority 和列表顺序排序。默认租约为 120 分钟。`--takeover-expired` 只允许接管已过期 claim。`release` 将 `in_progress` 恢复为 `not_started`。
+| 命令 | 作用 | 参数说明 |
+| --- | --- | --- |
+| `claim <feature-id>` | 认领指定功能 | [查看 `claim` 参数 →](/reference/command-claim#claim) |
+| `claim --next` | 按依赖、priority 和列表顺序选择 ready 功能 | [查看 `--next` 参数 →](/reference/command-claim#next) |
+| `claim renew <feature-id>` | 从当前时间续租已有 claim | [查看 `renew` 参数 →](/reference/command-claim#renew) |
+| `claim <feature-id> --takeover-expired` | 接管已过期 claim | [查看接管参数 →](/reference/command-claim#takeover-expired) |
+| `claim <feature-id> --push` | 认领、提交并推送；远端冲突时尝试下一个功能 | [查看 `--push` 参数 →](/reference/command-claim#push) |
+| `release <feature-id>` | 释放 claim，并把 `in_progress` 恢复为 `not_started` | [查看 `release` 参数 →](/reference/command-claim#release) |
 
 <Note>
   Solo 模式通常无需手动 claim；`verify` 会按需为 `defaultOwner` 临时认领并释放。Team 模式必须事先持有有效 claim。
 </Note>
 
-## workspace
+## Workspace
 
-```bash
-sdlc-harness workspace create <feature-id> [--base <branch>]
-sdlc-harness workspace status
-sdlc-harness workspace remove <feature-id> [--force]
-sdlc-harness workspace prune [--force]
-```
-
-create 为已认领功能创建 `.worktrees/<id>` 和 `feature/<id>` 分支。remove 默认拒绝删除含未提交或未推送工作的 workspace。prune 只考虑 claim 已释放或过期的 workspace，绝不触碰活跃 claim。
+| 命令 | 作用 | 参数说明 |
+| --- | --- | --- |
+| `workspace create <feature-id>` | 创建 `.worktrees/<id>` 和 `feature/<id>` 分支 | [查看 `create` 参数 →](/reference/command-workspace#create) |
+| `workspace status` | 输出所有已登记 workspace | [查看 `status` 说明 →](/reference/command-workspace#status) |
+| `workspace remove <feature-id>` | 安全移除单个 workspace | [查看 `remove` 参数 →](/reference/command-workspace#remove) |
+| `workspace prune` | 清理 claim 已释放或过期的 workspace | [查看 `prune` 参数 →](/reference/command-workspace#prune) |
 
 ## GitHub provider
 
-```bash
-sdlc-harness provider github check \
-  [--owner <github-owner>] [--repo <github-repo>] [--branch main]
-```
+| 命令 | 作用 | 参数说明 |
+| --- | --- | --- |
+| `provider github check` | 检查分支保护、review 和状态检查配置 | [查看 GitHub 参数 →](/reference/command-github#check) |
 
-未显式指定仓库时从 `origin` 推断。结果为 `PASS`、`FAIL` 或因 token 权限不足而无法确认的 `UNKNOWN`。
+## 环境与会话
 
-## 项目环境
-
-```bash
-sdlc-harness env
-sdlc-harness env check
-```
-
-`env` 列出已配置命令。`env check` 依次运行已配置的 `bootstrap`、`verify`、`e2e`、`health`，第一次失败后停止并返回非零。
-
-## 会话收尾
-
-```bash
-sdlc-harness session close
-```
-
-只读运行 `validate`、环境检查并汇总 Git 与功能状态。它不会自动提交、释放 claim 或清理 workspace。
+| 命令 | 作用 | 参数说明 |
+| --- | --- | --- |
+| `env` | 列出已配置环境命令 | [查看 `env` 说明 →](/reference/command-environment#env) |
+| `env check` | 依次运行 `bootstrap`、`verify`、`e2e`、`health` | [查看 `env check` 说明 →](/reference/command-environment#env-check) |
+| `session close` | 汇总审核、环境、Git 和功能状态 | [查看 `session close` 说明 →](/reference/command-environment#session-close) |
 
 ## 反馈
 
-```bash
-sdlc-harness feedback log \
-  --source <text> --severity <S1|S2|S3|S4> \
-  --observation <text> \
-  --disposition <Actioned|Deferred|Declined|Monitoring> \
-  [--detail <text>] [--date <YYYY-MM-DD>]
-```
-
-新条目写入反馈日志顶部。`Deferred` 和 `Declined` 必须说明原因。
+| 命令 | 作用 | 参数说明 |
+| --- | --- | --- |
+| `feedback log` | 在反馈日志顶部写入结构化条目 | [查看 `feedback log` 参数 →](/reference/command-feedback#log) |
 
 ## 通用默认值
 
 | 参数 | 默认值 |
 | --- | --- |
 | `--owner` | `harness.config.json.defaultOwner` |
-| `--actor` | 未指定时按相应命令的 owner/默认 owner 处理 |
 | `--ttl` | 120 分钟 |
 | `--remote` | `origin` |
 | `--branch` | `main` |
 | `--base` | `main` |
 
+`--actor` 的默认值因命令而异，具体以对应参数页为准。
+
 <Warning>
-  `init --force` 和 `workspace ... --force` 可能覆盖文件或丢弃未保存工作。先阅读命令输出的准确目标和风险。
+  `init --force` 和 `workspace ... --force` 可能覆盖文件或丢弃未提交、未推送的工作。使用前先阅读对应参数页和命令输出。
 </Warning>

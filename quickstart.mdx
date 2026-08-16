@@ -21,6 +21,8 @@ icon: "rocket"
     npx @caesarlo/sdlc-harness adopt
     ```
 
+    [查看 `adopt` 命令说明 →](/reference/command-repository#adopt)
+
     `adopt` 只写入缺失文件，不覆盖已有文件。如果仓库已经有 `AGENTS.md`，工具会生成 `AGENTS.sdlc-harness.md`；按终端提示从原 `AGENTS.md` 引用它，否则新 Agent 会话无法发现 harness。
   </Tab>
   <Tab title="空仓库或新仓库">
@@ -29,6 +31,8 @@ icon: "rocket"
     cd your-project
     npx @caesarlo/sdlc-harness init
     ```
+
+    [查看 `init` 参数说明 →](/reference/command-repository#init)
 
     `init` 遇到已有目标文件会停止并列出冲突。只有确认允许覆盖时才使用 `--force`。
   </Tab>
@@ -50,6 +54,8 @@ git config core.hooksPath .githooks
 npx @caesarlo/sdlc-harness validate
 npx @caesarlo/sdlc-harness status
 ```
+
+参数说明：[运行仓库审核](/reference/command-repository#validate) · [读取状态 JSON](/reference/command-repository#status)
 
 成功时输出 `All checks passed.`。如果失败，先修复带分类前缀的错误，再开始新工作，这样能区分原有问题和本次改动。
 
@@ -73,11 +79,15 @@ npx @caesarlo/sdlc-harness status
     ```bash
     npx @caesarlo/sdlc-harness new-feature
     ```
+
+    [查看 `new-feature` 参数说明 →](/reference/command-planning#new-feature)
   </Step>
   <Step title="开始功能">
     ```bash
     npx @caesarlo/sdlc-harness feature start <feature-id>
     ```
+
+    [查看 `feature start` 参数说明 →](/reference/command-feature#start)
 
     该命令会确认依赖已通过、功能可认领且未超过 owner 的 WIP 上限，然后原子地认领并切换到 `in_progress`。
   </Step>
@@ -85,6 +95,8 @@ npx @caesarlo/sdlc-harness status
     ```bash
     npx @caesarlo/sdlc-harness verify <feature-id>
     ```
+
+    [查看 `verify` 参数说明 →](/reference/command-evidence#verify)
 
     `verify` 实际执行该功能声明的自动验证命令，并记录退出码、时间和当前 commit SHA。
   </Step>
@@ -95,6 +107,8 @@ npx @caesarlo/sdlc-harness status
       --summary "行为、测试和边界检查通过"
     ```
 
+    [查看 `review record` 参数说明 →](/reference/command-evidence#review-record)
+
     reviewer 不能是该功能的 claim owner，且通过评审必须晚于最新一次通过验证。
   </Step>
   <Step title="完成并审核仓库">
@@ -103,6 +117,8 @@ npx @caesarlo/sdlc-harness status
     npx @caesarlo/sdlc-harness validate
     npx @caesarlo/sdlc-harness session close
     ```
+
+    参数说明：[完成功能](/reference/command-feature#complete) · [审核仓库](/reference/command-repository#validate) · [结束会话](/reference/command-environment#session-close)
 
     `feature complete` 只有在 claim、依赖、当前 commit 验证和后续评审都有效时才会把状态改为 `passing`。
   </Step>

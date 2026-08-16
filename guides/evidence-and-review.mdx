@@ -12,6 +12,8 @@ icon: "fingerprint"
 npx @caesarlo/sdlc-harness verify <feature-id>
 ```
 
+[查看 `verify` 参数说明 →](/reference/command-evidence#verify)
+
 这是本地写入 `kind: "test"` 证据的唯一受支持入口。它真实执行每条自动 verification，并记录命令、退出码、结果、时间和当前 commit SHA。失败也会记录。
 
 Solo 模式会在需要时临时 claim 并在结束后释放；Team 模式要求事先持有有效 claim。若功能包含 manual verification，`verify` 会拒绝把描述当作 shell 命令执行。
@@ -24,6 +26,8 @@ npx @caesarlo/sdlc-harness evidence manual <feature-id> \
   --notes "使用屏幕阅读器完成登录流程" --actor alice
 ```
 
+[查看 `evidence manual` 参数说明 →](/reference/command-evidence#manual)
+
 `--verification` 从 1 开始，并且必须指向 `manual` verification。notes 应记录环境、步骤和观察结果。
 
 ## 独立评审证据
@@ -34,6 +38,8 @@ npx @caesarlo/sdlc-harness review record <feature-id> \
   --summary "行为、失败路径、安全边界和回归测试已检查"
 ```
 
+[查看 `review record` 参数说明 →](/reference/command-evidence#review-record)
+
 评审者不能是 claim owner；评审必须发生在最新通过验证之后。重新修改并验证后，需要重新评审。
 
 ## 制品审批
@@ -43,6 +49,8 @@ npx @caesarlo/sdlc-harness evidence approval docs/product/requirements.md \
   --actor product-owner --summary "M1 范围获批"
 ```
 
+[查看 `evidence approval` 参数说明 →](/reference/command-evidence#approval)
+
 审批绑定制品路径、SHA-256 内容哈希和当前 commit。文件内容变化后旧审批失效，`validate` 会要求重新审批。
 
 ## GitHub Actions 证据
@@ -50,6 +58,8 @@ npx @caesarlo/sdlc-harness evidence approval docs/product/requirements.md \
 ```bash
 npx @caesarlo/sdlc-harness evidence import <feature-id> --ci-run <run-id>
 ```
+
+[查看 `evidence import` 参数说明 →](/reference/command-evidence#import)
 
 工具通过 GitHub CLI 确认 run 存在、已完成且结论成功；失败、运行中或不存在的 run 不会被导入。
 
