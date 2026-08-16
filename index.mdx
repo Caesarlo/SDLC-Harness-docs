@@ -10,6 +10,8 @@ SDLC Harness 是面向开发者和编码 Agent 的仓库原生 SDLC 治理工具
 npx @caesarlo/sdlc-harness adopt
 ```
 
+[查看 `adopt` 命令说明 →](/reference/command-repository#adopt)
+
 <CardGroup cols={2}>
   <Card title="10 分钟接入" icon="rocket" href="/quickstart">
     在已有仓库或空仓库中生成协议，启用 Git hook，并完成第一个功能。
@@ -33,10 +35,10 @@ SDLC Harness 让仓库成为唯一状态源：
 
 - `AGENTS.md` 和 `docs/workflow/` 保存 Agent 的工作协议。
 - `feature_list.json` 保存里程碑、功能、依赖、状态、claim 和证据。
-- `sdlc-harness verify` 真实执行功能声明的验证命令。
-- `sdlc-harness review record` 记录独立评审结论。
-- `sdlc-harness feature complete` 原子检查完成条件并更新状态。
-- `sdlc-harness validate` 审核整个仓库，并用非零退出码阻止不合规提交。
+- [`sdlc-harness verify`](/reference/command-evidence#verify) 真实执行功能声明的验证命令。
+- [`sdlc-harness review record`](/reference/command-evidence#review-record) 记录独立评审结论。
+- [`sdlc-harness feature complete`](/reference/command-feature#complete) 原子检查完成条件并更新状态。
+- [`sdlc-harness validate`](/reference/command-repository#validate) 审核整个仓库，并用非零退出码阻止不合规提交。
 - `.harness/events/` 保存可随 Git 同步的追加式审计日志。
 
 ## 一条可信的完成链

@@ -28,6 +28,8 @@ git config core.hooksPath .githooks
 HARNESS_BASE_REF=origin/main npx @caesarlo/sdlc-harness validate
 ```
 
+[查看 `validate` 命令说明 →](/reference/command-repository#validate)
+
 GitHub Actions 的 `GITHUB_BASE_REF` 也会被识别。没有 Git 基线时，工具回退到本地成功审核快照；两者都不存在时不会制造误报。
 
 ## 仓库治理检查
@@ -36,12 +38,16 @@ GitHub Actions 的 `GITHUB_BASE_REF` 也会被识别。没有 Git 基线时，�
 npx @caesarlo/sdlc-harness provider github check
 ```
 
+[查看 `provider github check` 参数说明 →](/reference/command-github#check)
+
 该命令检查目标分支的 GitHub 配置。owner/repo 默认从 `origin` 推断，也可以显式传入：
 
 ```bash
 npx @caesarlo/sdlc-harness provider github check \
   --owner acme --repo checkout --branch main
 ```
+
+[查看 owner、repo 和 branch 参数 →](/reference/command-github#check)
 
 `PASS` 表示已确认符合要求，`FAIL` 表示已确认不符合，`UNKNOWN` 表示当前 token 缺少管理员权限，无法判断。它不会运行功能测试，也不会替代 `validate`。
 
@@ -51,6 +57,8 @@ npx @caesarlo/sdlc-harness provider github check \
 npx @caesarlo/sdlc-harness evidence import M1-AUTH-001 --ci-run 123456
 ```
 
+[查看 `evidence import` 参数说明 →](/reference/command-evidence#import)
+
 导入前工具通过 `gh api` 验证 run 已完成且成功。需要显式仓库时添加 `--owner` 和 `--repo`。
 
 ## 跨机器 claim
@@ -58,6 +66,8 @@ npx @caesarlo/sdlc-harness evidence import M1-AUTH-001 --ci-run 123456
 ```bash
 npx @caesarlo/sdlc-harness claim M1-AUTH-001 --owner alice --push
 ```
+
+[查看 `claim --push` 参数说明 →](/reference/command-claim#push)
 
 Git 不是实时锁：两台机器可能在本地同时认领。`--push` 会提交并推送 claim；如果远端抢先确认同一功能，工具会在同步后尝试认领下一个 ready 功能。可用 `--remote` 和 `--branch` 修改目标。
 
