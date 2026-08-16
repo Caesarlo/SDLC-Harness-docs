@@ -41,6 +41,15 @@
         "pages": [
           "reference/review-results",
           "reference/commands",
+          "reference/command-repository",
+          "reference/command-planning",
+          "reference/command-feature",
+          "reference/command-evidence",
+          "reference/command-claim",
+          "reference/command-workspace",
+          "reference/command-github",
+          "reference/command-environment",
+          "reference/command-feedback",
           "reference/configuration",
           "reference/feature-list",
           "reference/status-and-traceability-output"
