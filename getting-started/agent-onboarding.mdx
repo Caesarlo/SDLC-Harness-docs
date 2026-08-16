@@ -1,51 +1,51 @@
 ---
-title: "Agent 接入"
-description: "让 Codex、Claude Code 和其他编码 Agent 稳定发现并遵守仓库协议。"
+title: "Agent onboarding"
+description: "Help Codex, Claude Code, and other coding agents consistently discover and follow the repository protocol."
 icon: "robot"
 ---
 
-SDLC Harness 不依赖特定 Agent。只要 Agent 能读取仓库文件、运行命令并修改代码，就可以遵循同一套协议。
+SDLC Harness does not depend on a specific agent. Any agent that can read repository files, run commands, and modify code can follow the same protocol.
 
-## 新仓库
+## New repositories
 
-`init` 会生成根目录 `AGENTS.md`。开始任务时让 Agent 先读取：
+`init` generates `AGENTS.md` in the repository root. At the start of a task, have the agent read:
 
-1. `AGENTS.md` 和其中指向的工作流页面。
-2. `feature_list.json` 中当前 active、ready 和 blocked 功能。
-3. 当前功能的 `source_refs`、依赖和 verification。
-4. `progress.md` 中最近一次会话检查点。
+1. `AGENTS.md` and the workflow pages it references.
+2. The current active, ready, and blocked features in `feature_list.json`.
+3. The current feature's `source_refs`, dependencies, and verification.
+4. The latest session checkpoint in `progress.md`.
 
-一个实用的启动提示是：
+A practical startup prompt is:
 
 ```text
-先读取 AGENTS.md 并遵循 Routing Map。检查 status 和 validate，
-只推进一个 ready 功能；完成前运行 verify、记录独立 review，
-使用 feature complete，并在结束前运行 session close。
+Read AGENTS.md and follow its Routing Map. Check status and validate.
+Advance exactly one ready feature; before completion, run verify, record an independent review,
+use feature complete, and run session close before ending the session.
 ```
 
-## 仓库已经有 `AGENTS.md`
+## The repository already has `AGENTS.md`
 
-`adopt` 不会覆盖它，而是写入 `AGENTS.sdlc-harness.md`。你需要在原 `AGENTS.md` 中加入明确引用，例如：
+`adopt` does not overwrite the file. It writes `AGENTS.sdlc-harness.md` instead. Add an explicit reference to the original `AGENTS.md`, for example:
 
 ```md
-在开始任何开发任务前，还必须读取并遵循 `AGENTS.sdlc-harness.md`。
+Before starting any development task, you must also read and follow `AGENTS.sdlc-harness.md`.
 ```
 
-`validate` 的 `[agents-onboarding]` 会检查这条发现链。sidecar 存在但没有被根协议引用时审核会失败。
+The `[agents-onboarding]` check in `validate` verifies this discovery chain. Repository validation fails when the sidecar exists but the root protocol does not reference it.
 
 ## Claude Code
 
-除通用 `AGENTS.md` 外，模板还生成 `.claude/skills/` 的轻量入口，帮助 Claude Code 发现需求、架构、用户故事、功能拆解、里程碑、TDD、自验收、部署和反馈流程。仓库文件仍然是最终状态源。
+In addition to the shared `AGENTS.md`, the template generates lightweight entry points under `.claude/skills/` to help Claude Code discover the requirements, architecture, user story, feature decomposition, milestone, TDD, self-acceptance, deployment, and feedback workflows. Repository files remain the final source of truth.
 
-## 多 Agent 协作
+## Multi-agent collaboration
 
-- 用 owner 表示负责人，用 actor 区分同一负责人启动的不同 Agent 会话。
-- claim 的唯一性始终按功能判断；actor 不会让两个 Agent 同时拥有同一功能。
-- 每个 Agent 只处理自己持有有效 claim 的功能。
-- 并行修改使用 `workspace create` 隔离 worktree。
-- 评审 Agent 不能与功能的 claim owner 相同。
-- 每次结束都运行 `session close`，并在 `progress.md` 留下下一步和阻塞信息。
+- Use `owner` to identify the responsible party, and `actor` to distinguish separate agent sessions started by that `owner`.
+- `claim` uniqueness is always determined per feature; `actor` does not allow two agents to own the same feature at once.
+- Each agent works only on features for which it holds a valid `claim`.
+- Use `workspace create` to isolate parallel changes in separate `worktree` directories.
+- A review agent cannot be the `owner` of the feature's `claim`.
+- Run `session close` at the end of every session, and record the next step and any blockers in `progress.md`.
 
 <Tip>
-  Agent 报告“完成”之前，让它贴出 `feature complete`、`validate` 和 `session close` 的真实结果，而不是只给自然语言总结。
+  Before an agent reports completion, ask it to show the actual output from `feature complete`, `validate`, and `session close`, not just a natural-language summary.
 </Tip>

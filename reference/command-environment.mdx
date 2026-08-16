@@ -1,39 +1,39 @@
 ---
-title: "环境与会话命令"
-description: "env、env check 和 session close 的行为与退出状态。"
+title: "Environment and session commands"
+description: "Behavior and exit status for env, env check, and session close."
 icon: "laptop-code"
 ---
 
 ## `env` {#env}
 
-列出 `harness.config.json.commands` 中已配置的环境命令。
+List the environment commands configured in `harness.config.json.commands`.
 
 ```bash
 npx @caesarlo/sdlc-harness env
 ```
 
-该命令没有参数，也不会执行列出的命令。
+This command has no arguments and does not execute the listed commands.
 
 ## `env check` {#env-check}
 
-依次运行已配置的环境检查。
+Run the configured environment checks in sequence.
 
 ```bash
 npx @caesarlo/sdlc-harness env check
 ```
 
-该命令没有参数。执行顺序固定为 `bootstrap`、`verify`、`e2e`、`health`，只运行存在的配置项，并在第一次失败后停止。全部通过或没有配置项时返回 `0`；任一命令失败时返回非零。
+This command has no arguments. The fixed execution order is `bootstrap`, `verify`, `e2e`, then `health`. It runs only configured entries and stops after the first failure. It returns `0` if all checks pass or none are configured, and returns nonzero if any command fails.
 
-这里的 `commands.verify` 是项目级环境检查，不是功能的 `sdlc-harness verify <feature-id>`。
+Here, `commands.verify` is a project-level environment check, not a feature's `sdlc-harness verify <feature-id>`.
 
 ## `session close` {#session-close}
 
-汇总会话结束时的仓库健康状态。
+Summarize repository health at the end of a session.
 
 ```bash
 npx @caesarlo/sdlc-harness session close
 ```
 
-该命令没有参数。它运行 `validate` 和环境检查，然后汇总 Git 工作区、当前 commit、功能计数和下一步。任何组成检查失败时返回非零。
+This command has no arguments. It runs `validate` and the environment checks, then summarizes the Git worktree, current commit, feature counts, and next steps. It exits nonzero if any component check fails.
 
-`session close` 不会自动提交、推送、释放 claim 或移除 workspace。
+`session close` does not automatically commit, push, release claims, or remove workspaces.

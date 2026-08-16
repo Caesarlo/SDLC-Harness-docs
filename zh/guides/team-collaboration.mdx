@@ -1,0 +1,108 @@
+---
+title: "团队协作"
+description: "使用 claim、租约、WIP、跨机器同步和独立 workspace 协调多人或多 Agent。"
+icon: "people-group"
+---
+
+## 启用 Team 模式
+
+```json
+{
+  "defaultOwner": "alice",
+  "collaborationMode": "team"
+}
+```
+
+Team 模式不会隐式认领或释放功能。执行 `verify` 等后续写操作前，先运行 `feature start` 或 `claim`，让调用者持有有效 claim。
+
+## owner 与 actor
+
+- owner 表示最终责任人，例如开发者或团队成员。
+- actor 表示某次 Agent 会话，例如 `codex-1`。
+- 多个 Agent 会话可以共享同一 owner，并使用不同的 actor ID，但每个功能只能有一个 claim。
+
+```bash
+npx @caesarlo/sdlc-harness claim M1-AUTH-001 \
+  --owner alice --actor codex-1 --ttl 120
+```
+
+[查看 `claim` 参数说明 →](/zh/reference/command-claim#claim)
+
+## 租约
+
+长期工作应在过期前续租：
+
+```bash
+npx @caesarlo/sdlc-harness claim renew M1-AUTH-001 --owner alice --ttl 120
+```
+
+[查看 `claim renew` 参数说明 →](/zh/reference/command-claim#renew)
+
+只有租约已过期时才能接管：
+
+```bash
+npx @caesarlo/sdlc-harness claim M1-AUTH-001 \
+  --takeover-expired --owner bob --actor claude-2
+```
+
+[查看过期接管参数说明 →](/zh/reference/command-claim#takeover-expired)
+
+接管会保留前任 owner 信息供审计。活跃租约不会被强行覆盖。
+
+## WIP 上限
+
+`feature_list.json.rules.wip_limit_per_owner` 默认是 1。达到上限后，owner 不能再认领新功能。先完成、阻塞或释放当前功能，而不是通过新 owner 名称绕过限制。
+
+## 认领下一个功能
+
+```bash
+npx @caesarlo/sdlc-harness claim --next --owner alice
+```
+
+[查看 `claim --next` 参数说明 →](/zh/reference/command-claim#next)
+
+只会选择 `not_started`、未持有有效 claim 且依赖全部 `passing` 的功能。priority 越小越优先。
+
+## 跨机器同步
+
+```bash
+npx @caesarlo/sdlc-harness claim M1-AUTH-001 --owner alice --push
+```
+
+[查看 `claim --push` 参数说明 →](/zh/reference/command-claim#push)
+
+`--push` 默认提交到 `origin/main`，可用 `--remote` 和 `--branch` 调整。两个设备仍可能先在本地同时认领；推送冲突时工具会同步远端并尝试回退到下一个 ready 功能。
+
+## 独立 workspace
+
+```bash
+npx @caesarlo/sdlc-harness workspace create M1-AUTH-001 --base main
+npx @caesarlo/sdlc-harness workspace status
+```
+
+参数说明：[创建 workspace](/zh/reference/command-workspace#create) · [查看 workspace](/zh/reference/command-workspace#status)
+
+workspace 位于 `.worktrees/<feature-id>`，分支为 `feature/<id>`。状态命令会同时显示 claim 是否活跃和路径是否仍存在。
+
+完成并推送后移除：
+
+```bash
+npx @caesarlo/sdlc-harness workspace remove M1-AUTH-001
+npx @caesarlo/sdlc-harness workspace prune
+```
+
+参数说明：[移除 workspace](/zh/reference/command-workspace#remove) · [批量清理 workspace](/zh/reference/command-workspace#prune)
+
+remove 会拒绝脏或未推送 workspace。prune 只清理 claim 已释放或过期的安全项，绝不移除活跃 claim 的 workspace。
+
+## 推荐并行模式
+
+1. 所有 Agent 先同步远端并读取 `status`。
+2. 每个 Agent 认领不同功能，并创建对应 workspace。
+3. 按需续租，阻塞时立即 `feature block`。
+4. reviewer 使用不同 owner 身份记录评审。
+5. 完成后推送代码与状态，运行 `session close`，再清理 workspace。
+
+<Warning>
+  Git claim 是可审计的协作协议，不是实时分布式锁。跨机器工作必须同步远端，不能只依赖本地 `feature_list.json`。
+</Warning>

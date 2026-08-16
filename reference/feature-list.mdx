@@ -1,43 +1,43 @@
 ---
 title: "feature_list.json"
-description: "理解里程碑、功能、依赖、验证、证据和运行状态字段。"
+description: "Understand milestone, feature, dependency, verification, evidence, and runtime status fields."
 icon: "rectangle-list"
 ---
 
-`feature_list.json` 是功能计划和执行状态的唯一来源。它会被开发者、Agent、CLI、Git hook 和 CI 共同读取。
+`feature_list.json` is the single source of truth for the feature plan and execution status. Developers, Agents, the CLI, Git hooks, and CI all read it.
 
-## 顶层字段
+## Top-level fields
 
-| 字段 | 含义 |
+| Field | Meaning |
 | --- | --- |
-| `project` | 项目名称 |
-| `schema_version` | 状态文件格式版本字符串 |
-| `last_updated` | 最近更新时间 |
-| `milestones` | 有序里程碑列表 |
-| `features` | 功能列表 |
-| `rules` | 项目治理合同 |
-| `rule_exceptions` | 显式规则例外信息 |
-| `status_legend` | 状态含义说明 |
-| `evidence` | 制品审批等项目级证据 |
+| `project` | Project name |
+| `schema_version` | State file format version string |
+| `last_updated` | Most recent update time |
+| `milestones` | Ordered milestone list |
+| `features` | Feature list |
+| `rules` | Project governance contract |
+| `rule_exceptions` | Explicit rule exception information |
+| `status_legend` | Status meaning descriptions |
+| `evidence` | Project-level evidence such as artifact approvals |
 
-里程碑至少包含 `id`、`title` 和 `objective`。列表顺序用于依赖的里程碑先后检查。
+A milestone contains at least `id`, `title`, and `objective`. List order is used to check milestone ordering for dependencies.
 
-## 功能定义
+## Feature definition
 
-| 字段 | 是否必需 | 用途 |
+| Field | Required | Purpose |
 | --- | --- | --- |
-| `id` | 是 | 仓库内唯一 ID |
-| `milestone` | 是 | 已存在的里程碑 ID |
-| `behavior` | 是 | 可观察的完成行为 |
-| `status` | 是 | `not_started`、`in_progress`、`blocked`、`passing` |
-| `dependencies` | 是 | 必须先通过的功能 ID |
-| `verification` | 是 | 至少一个自动或手工验证项 |
-| `title`、`area` | 否 | 人类可读名称和领域 |
-| `priority` | 否 | 数字越小越优先 |
-| `risk` | 否 | `low`、`medium`、`high`；仅用于流程判断 |
-| `source_refs` | 实际功能需要 | 需求、故事、验收标准或 ADR 引用 |
-| `implementation` | 否 | 相关文件和 commit |
-| `notes` | 否 | 补充信息 |
+| `id` | Yes | Unique ID in the repository |
+| `milestone` | Yes | Existing milestone ID |
+| `behavior` | Yes | Observable completion behavior |
+| `status` | Yes | `not_started`, `in_progress`, `blocked`, `passing` |
+| `dependencies` | Yes | Feature IDs that must pass first |
+| `verification` | Yes | At least one automated or manual verification item |
+| `title`, `area` | No | Human-readable name and domain |
+| `priority` | No | Lower numbers have higher priority |
+| `risk` | No | `low`, `medium`, `high`; used only for workflow decisions |
+| `source_refs` | Required for real features | Requirement, story, acceptance criterion, or ADR references |
+| `implementation` | No | Related files and commit |
+| `notes` | No | Additional information |
 
 ## verification
 
@@ -45,28 +45,28 @@ icon: "rectangle-list"
 {
   "type": "automated",
   "command": "npm test -- auth",
-  "expected": "有效登录创建会话",
+  "expected": "A valid login creates a session",
   "source_refs": ["docs/product/user-stories.md#US-1.AC-1"]
 }
 ```
 
-`type` 只能是 `automated` 或 `manual`。自动项由 `verify` 执行；手工项用 `evidence manual` 记录。`source_refs` 应精确指向该检查覆盖的验收标准。
+`type` can only be `automated` or `manual`. `verify` executes automated items; `evidence manual` records manual items. `source_refs` should point precisely to the acceptance criteria covered by the check.
 
-## CLI 管理的字段
+## CLI-managed fields
 
-以下字段不要手工维护：
+Do not maintain these fields manually:
 
-- `claim`：owner、actor、认领时间、租约、心跳和接管信息。
-- `workspace`：分支、路径、基线 commit 和创建时间。
-- `evidence` 中的 test、manual、review 和项目审批记录。
-- `blocker` 与生命周期状态变化。
+- `claim`: owner, actor, claim time, lease, heartbeat, and takeover information.
+- `workspace`: branch, path, baseline commit, and creation time.
+- Test, manual, review, and project approval records in `evidence`.
+- `blocker` and lifecycle status transitions.
 
-相关命令使用比较并交换式原子写入；检测到并发修改时会安全重试或拒绝覆盖。
+The related commands use compare-and-swap atomic writes. When they detect concurrent modification, they safely retry or refuse to overwrite it.
 
 ## evidence
 
-功能证据常见 `kind` 包括 test、manual 和 review。它们记录结果、时间及对应的命令、verification 索引、reviewer、actor、notes 或 CI 元数据。项目顶层 evidence 用于制品审批并额外保存 artifact 和内容哈希。
+Common `kind` values for feature evidence include test, manual, and review. Records contain results and timestamps plus the relevant command, verification index, reviewer, actor, notes, or CI metadata. Top-level project evidence is used for artifact approval and additionally stores the artifact and content hash.
 
 <Warning>
-  JSON Schema 通过只代表结构合法。依赖顺序、WIP、证据时效、独立评审、来源引用和追溯完整性仍由 `validate` 的语义审核器检查。
+  Passing JSON Schema validation only means the structure is valid. `validate` semantic auditors still check dependency order, WIP, evidence freshness, independent review, source references, and traceability completeness.
 </Warning>

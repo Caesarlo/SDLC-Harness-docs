@@ -1,6 +1,6 @@
 ---
-title: "状态与追溯输出"
-description: "解释 status 和 traceability 的 JSON 字段，方便开发者、Agent 与脚本使用。"
+title: "Status and traceability output"
+description: "Understand the JSON fields from status and traceability for developers, Agents, and scripts."
 icon: "code"
 ---
 
@@ -10,21 +10,21 @@ icon: "code"
 npx @caesarlo/sdlc-harness status
 ```
 
-[查看 `status` 命令说明 →](/reference/command-repository#status)
+[View the `status` command →](/reference/command-repository#status)
 
-| 字段 | 含义 |
+| Field | Meaning |
 | --- | --- |
-| `project` | 项目名称 |
-| `counts` | 四种功能状态的数量 |
-| `activeFeatures` | 当前 `in_progress` 功能 |
-| `readyFeatures` | 依赖通过且可开始的功能，按优先级排序 |
-| `blockedFeatures` | 被阻塞功能及 blocker |
-| `artifactApprovals` | 项目制品审批及当前有效性 |
-| `traceability` | 追溯是否适用、是否延期、是否完整和各类缺口 |
-| `nextActions` | 根据当前状态生成的建议动作 |
-| `milestoneCount` | 里程碑数量 |
+| `project` | Project name |
+| `counts` | Counts for the four feature statuses |
+| `activeFeatures` | Current `in_progress` features. Each entry contains `id`, `behavior`, and `owner`, plus `title` only when the feature defines one. |
+| `readyFeatures` | Features whose dependencies pass and can be started, sorted by priority; summaries also include `dependencies` and `sourceRefs` |
+| `blockedFeatures` | Blocked features and their blockers; summaries also include `dependencies` and `sourceRefs` |
+| `artifactApprovals` | Project artifact approvals and their current validity |
+| `traceability` | Whether traceability applies, is deferred, is complete, and each category of gap |
+| `nextActions` | Recommended actions generated from current state |
+| `milestoneCount` | Number of milestones |
 
-功能摘要还包含 title、behavior、owner、dependencies 和 sourceRefs，适合 Agent 在不自行遍历整个 JSON 的情况下选择下一步。
+`activeFeatures` entries always contain `id`, `behavior`, and `owner`; they contain `title` only when the feature defines one. `readyFeatures` and `blockedFeatures` summaries additionally contain `dependencies` and `sourceRefs`. This helps an Agent choose the next step without traversing the entire JSON itself.
 
 ```json
 {
@@ -46,19 +46,19 @@ npx @caesarlo/sdlc-harness status
 npx @caesarlo/sdlc-harness traceability
 ```
 
-[查看 `traceability` 命令说明 →](/reference/command-repository#traceability)
+[View the `traceability` command →](/reference/command-repository#traceability)
 
-完整矩阵包含解析出的 requirements、stories、acceptance criteria、features 和 verification 映射，以及下列诊断：
+The complete matrix contains parsed requirements, stories, acceptance criteria, features, and verification mappings, plus these diagnostics:
 
-- `applicable`：当前仓库是否已进入真实追溯检查范围。
-- `deferred`：是否仍因 scope placeholder 而延期。
-- `ok`：矩阵是否无缺口。
-- `uncoveredRequirements`、`orphanStories`、`orphanFeatures`。
-- `uncoveredAcceptanceCriteria`、`unverifiedAcceptanceCriteria`。
-- `unknownReferences`：无法解析的路径或 ID。
+- `applicable`: whether the current repository is in scope for real traceability checks.
+- `deferred`: whether checks are still deferred because of a scope placeholder.
+- `ok`: whether the matrix has no gaps.
+- `uncoveredRequirements`, `orphanStories`, and `orphanFeatures`.
+- `uncoveredAcceptanceCriteria` and `unverifiedAcceptanceCriteria`.
+- `unknownReferences`: unknown requirement, story, or acceptance criterion IDs, plus verification references to acceptance criteria that the feature itself does not declare. Path existence is checked separately by `validate` under `[stage-gate]`.
 
-`status` 始终以 0 退出并提供观察视图；`traceability` 在适用且存在缺口时返回非零，适合 CI 门禁。
+On a normal read, `status` does not fail because of governance gaps and provides an observational view. Loading or parsing errors can still make it exit nonzero. `traceability` exits nonzero when it applies and has actual gaps, so it can serve as a CI gate.
 
 <Tip>
-  脚本消费这些命令时使用 JSON 解析，不要依赖字段顺序或自然语言 `nextActions`。后者主要用于开发者和 Agent 导航。
+  When scripts consume these commands, parse the JSON. Do not depend on field order or natural-language `nextActions`, which primarily guide developers and Agents.
 </Tip>

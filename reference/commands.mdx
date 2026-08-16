@@ -1,137 +1,138 @@
 ---
-title: "命令参考"
-description: "全部 SDLC Harness CLI 命令及其参数说明入口。"
+title: "Command reference"
+description: "Entry points for every SDLC Harness CLI command and its arguments."
 icon: "terminal"
 ---
 
-所有命令都在目标仓库根目录运行。本文省略重复的 `npx @caesarlo/sdlc-harness` 前缀；未安装 CLI 时请加上该前缀。
+Run every command from the target repository root. This page omits the repeated `npx @caesarlo/sdlc-harness` prefix. Add it when the CLI is not installed.
 
 ```bash
 npx @caesarlo/sdlc-harness --help
 ```
 
 <CardGroup cols={2}>
-  <Card title="仓库与审核" icon="folder-check" href="/reference/command-repository" cta="查看参数" arrow>
-    接入 Harness、审核仓库并读取状态与追溯矩阵。
+  <Card title="Repository and governance" icon="folder-check" href="/reference/command-repository" cta="View arguments" arrow>
+    Install Harness, audit the repository, and read status and traceability matrices.
   </Card>
-  <Card title="规划" icon="list-check" href="/reference/command-planning" cta="查看参数" arrow>
-    交互或从 JSON 创建里程碑和功能。
+  <Card title="Planning" icon="list-check" href="/reference/command-planning" cta="View arguments" arrow>
+    Create milestones interactively; create features interactively or import them from JSON.
   </Card>
-  <Card title="功能生命周期" icon="diagram-project" href="/reference/command-feature" cta="查看参数" arrow>
-    启动、完成、阻塞和重新打开功能。
+  <Card title="Feature lifecycle" icon="diagram-project" href="/reference/command-feature" cta="View arguments" arrow>
+    Start, complete, block, and reopen features.
   </Card>
-  <Card title="验证与证据" icon="fingerprint" href="/reference/command-evidence" cta="查看参数" arrow>
-    执行验证、记录评审、人工证据和 CI 证据。
+  <Card title="Verification and evidence" icon="fingerprint" href="/reference/command-evidence" cta="View arguments" arrow>
+    Execute verification and record reviews, manual evidence, and CI evidence.
   </Card>
-  <Card title="Claim 与租约" icon="user-lock" href="/reference/command-claim" cta="查看参数" arrow>
-    认领、续租、接管、推送和释放功能。
+  <Card title="Claims and leases" icon="user-lock" href="/reference/command-claim" cta="View arguments" arrow>
+    Claim, renew, take over, push, and release features.
   </Card>
-  <Card title="Workspace" icon="code-branch" href="/reference/command-workspace" cta="查看参数" arrow>
-    创建和清理 Git worktree 隔离目录。
+  <Card title="Workspace" icon="code-branch" href="/reference/command-workspace" cta="View arguments" arrow>
+    Create and clean up isolated Git worktree directories.
   </Card>
-  <Card title="GitHub" icon="github" href="/reference/command-github" cta="查看参数" arrow>
-    检查仓库保护配置。
+  <Card title="GitHub" icon="github" href="/reference/command-github" cta="View arguments" arrow>
+    Check repository protection configuration.
   </Card>
-  <Card title="环境与会话" icon="laptop-code" href="/reference/command-environment" cta="查看参数" arrow>
-    检查项目环境并汇总会话结束状态。
+  <Card title="Environment and sessions" icon="laptop-code" href="/reference/command-environment" cta="View arguments" arrow>
+    Check the project environment and summarize end-of-session status.
   </Card>
-  <Card title="反馈" icon="comment-dots" href="/reference/command-feedback" cta="查看参数" arrow>
-    写入结构化反馈日志。
+  <Card title="Feedback" icon="comment-dots" href="/reference/command-feedback" cta="View arguments" arrow>
+    Write structured feedback logs.
   </Card>
 </CardGroup>
 
-## 仓库与审核
+## Repository and governance
 
-| 命令 | 作用 | 参数说明 |
+| Command | Purpose | Argument reference |
 | --- | --- | --- |
-| `init [--force]` | 生成完整协议；遇到已有文件默认停止并列出冲突 | [查看 `init` 参数 →](/reference/command-repository#init) |
-| `adopt` | 只插入缺失文件；已有 `AGENTS.md` 时生成 sidecar | [查看 `adopt` 说明 →](/reference/command-repository#adopt) |
-| `validate` | 运行全部治理审核；失败时返回非零 | [查看 `validate` 说明 →](/reference/command-repository#validate) |
-| `status` | 输出功能、审批、追溯和下一步的 JSON 摘要 | [查看 `status` 说明 →](/reference/command-repository#status) |
-| `traceability` | 输出完整追溯矩阵；存在实际缺口时返回非零 | [查看 `traceability` 说明 →](/reference/command-repository#traceability) |
+| `init [--force]` | Generate the complete protocol. By default, stop and list conflicts when files already exist. | [View `init` arguments →](/reference/command-repository#init) |
+| `adopt` | Insert only missing files. Generate a sidecar when `AGENTS.md` already exists. | [View `adopt` details →](/reference/command-repository#adopt) |
+| `validate` | Run every governance audit and exit nonzero on failure. | [View `validate` details →](/reference/command-repository#validate) |
+| `status` | Output a JSON summary of features, approvals, traceability, and next steps. | [View `status` details →](/reference/command-repository#status) |
+| `traceability` | Output the complete traceability matrix and exit nonzero when actual gaps exist. | [View `traceability` details →](/reference/command-repository#traceability) |
 
-## 规划
+## Planning
 
-| 命令 | 作用 | 参数说明 |
+| Command | Purpose | Argument reference |
 | --- | --- | --- |
-| `new-feature [--input <path>]` | 交互创建功能，或从仓库内 JSON 文件导入 | [查看 `new-feature` 参数 →](/reference/command-planning#new-feature) |
-| `new-milestone` | 交互创建里程碑 | [查看 `new-milestone` 说明 →](/reference/command-planning#new-milestone) |
+| `new-feature [--input <path>]` | Create a feature interactively or import it from a JSON file in the repository. | [View `new-feature` arguments →](/reference/command-planning#new-feature) |
+| `new-milestone` | Create a milestone interactively. | [View `new-milestone` details →](/reference/command-planning#new-milestone) |
 
-## 功能生命周期
+## Feature lifecycle
 
-| 命令 | 状态变化 | 参数说明 |
+| Command | Status transition | Argument reference |
 | --- | --- | --- |
-| `feature start <feature-id>` | 检查 ready、依赖和 WIP，认领并进入 `in_progress` | [查看 `start` 参数 →](/reference/command-feature#start) |
-| `feature complete <feature-id>` | 检查证据和独立 review，再进入 `passing` | [查看 `complete` 参数 →](/reference/command-feature#complete) |
-| `feature block <feature-id>` | 记录 blocker、释放 claim 并进入 `blocked` | [查看 `block` 参数 →](/reference/command-feature#block) |
-| `feature reopen <feature-id>` | 清除 blocker，从 `blocked` 返回 `not_started` | [查看 `reopen` 参数 →](/reference/command-feature#reopen) |
+| `feature start <feature-id>` | Check readiness, dependencies, and WIP, then claim the feature and move it to `in_progress`. | [View `start` arguments →](/reference/command-feature#start) |
+| `feature complete <feature-id>` | Check evidence and independent review, then move the feature to `passing`. | [View `complete` arguments →](/reference/command-feature#complete) |
+| `feature block <feature-id>` | Record a blocker, release the claim, and move the feature to `blocked`. | [View `block` arguments →](/reference/command-feature#block) |
+| `feature reopen <feature-id>` | Clear the blocker and move the feature from `blocked` to `not_started`. | [View `reopen` arguments →](/reference/command-feature#reopen) |
 
-## 验证、评审与证据
+## Verification, review, and evidence
 
-| 命令 | 作用 | 参数说明 |
+| Command | Purpose | Argument reference |
 | --- | --- | --- |
-| `verify <feature-id>` | 真实执行自动验证并记录 test 证据 | [查看 `verify` 参数 →](/reference/command-evidence#verify) |
-| `evidence manual <feature-id>` | 为 manual 验证项记录人工证据 | [查看 `evidence manual` 参数 →](/reference/command-evidence#manual) |
-| `review record <feature-id>` | 为当前 commit 记录评审结论 | [查看 `review record` 参数 →](/reference/command-evidence#review-record) |
-| `evidence approval <artifact>` | 记录与文件内容哈希绑定的项目级审批 | [查看 `evidence approval` 参数 →](/reference/command-evidence#approval) |
-| `evidence import <feature-id>` | 验证并导入成功的 GitHub Actions run | [查看 `evidence import` 参数 →](/reference/command-evidence#import) |
+| `verify <feature-id>` | Execute automated verification and record test evidence. | [View `verify` arguments →](/reference/command-evidence#verify) |
+| `evidence manual <feature-id>` | Record manual evidence for a manual verification item. | [View `evidence manual` arguments →](/reference/command-evidence#manual) |
+| `review record <feature-id>` | Record a review conclusion for the current commit. | [View `review record` arguments →](/reference/command-evidence#review-record) |
+| `evidence approval <artifact>` | Record project-level approval bound to the file content hash. | [View `evidence approval` arguments →](/reference/command-evidence#approval) |
+| `evidence import <feature-id>` | Validate and import a successful GitHub Actions run. | [View `evidence import` arguments →](/reference/command-evidence#import) |
 
-## Claim 与租约
+## Claims and leases
 
-| 命令 | 作用 | 参数说明 |
+| Command | Purpose | Argument reference |
 | --- | --- | --- |
-| `claim <feature-id>` | 认领指定功能 | [查看 `claim` 参数 →](/reference/command-claim#claim) |
-| `claim --next` | 按依赖、priority 和列表顺序选择 ready 功能 | [查看 `--next` 参数 →](/reference/command-claim#next) |
-| `claim renew <feature-id>` | 从当前时间续租已有 claim | [查看 `renew` 参数 →](/reference/command-claim#renew) |
-| `claim <feature-id> --takeover-expired` | 接管已过期 claim | [查看接管参数 →](/reference/command-claim#takeover-expired) |
-| `claim <feature-id> --push` | 认领、提交并推送；远端冲突时尝试下一个功能 | [查看 `--push` 参数 →](/reference/command-claim#push) |
-| `release <feature-id>` | 释放 claim，并把 `in_progress` 恢复为 `not_started` | [查看 `release` 参数 →](/reference/command-claim#release) |
+| `claim <feature-id>` | Claim a specific feature. | [View `claim` arguments →](/reference/command-claim#claim) |
+| `claim --next` | Select a ready feature by dependency status, priority, and list order. | [View `--next` arguments →](/reference/command-claim#next) |
+| `claim renew <feature-id>` | Renew an existing claim from the current time. | [View `renew` arguments →](/reference/command-claim#renew) |
+| `claim <feature-id> --takeover-expired` | Take over an expired claim. | [View takeover arguments →](/reference/command-claim#takeover-expired) |
+| `claim <feature-id> --push` | Claim, commit, and push. Try the next feature after a remote conflict. | [View `--push` arguments →](/reference/command-claim#push) |
+| `release <feature-id>` | Release the claim and return `in_progress` to `not_started`. | [View `release` arguments →](/reference/command-claim#release) |
 
 <Note>
-  Solo 模式通常无需手动 claim；`verify` 会按需为 `defaultOwner` 临时认领并释放。Team 模式必须事先持有有效 claim。
+  Solo mode usually does not require manual claims. `verify` temporarily claims the feature for `defaultOwner` when needed and releases it afterward. Team mode requires an active claim in advance.
 </Note>
 
 ## Workspace
 
-| 命令 | 作用 | 参数说明 |
+| Command | Purpose | Argument reference |
 | --- | --- | --- |
-| `workspace create <feature-id>` | 创建 `.worktrees/<id>` 和 `feature/<id>` 分支 | [查看 `create` 参数 →](/reference/command-workspace#create) |
-| `workspace status` | 输出所有已登记 workspace | [查看 `status` 说明 →](/reference/command-workspace#status) |
-| `workspace remove <feature-id>` | 安全移除单个 workspace | [查看 `remove` 参数 →](/reference/command-workspace#remove) |
-| `workspace prune` | 清理 claim 已释放或过期的 workspace | [查看 `prune` 参数 →](/reference/command-workspace#prune) |
+| `workspace create <feature-id>` | Create `.worktrees/<id>` and a `feature/<id>` branch. | [View `create` arguments →](/reference/command-workspace#create) |
+| `workspace status` | Output all registered workspaces. | [View `status` details →](/reference/command-workspace#status) |
+| `workspace remove <feature-id>` | Safely remove one workspace. | [View `remove` arguments →](/reference/command-workspace#remove) |
+| `workspace prune` | Clean up workspaces whose claims were released or expired. | [View `prune` arguments →](/reference/command-workspace#prune) |
 
 ## GitHub provider
 
-| 命令 | 作用 | 参数说明 |
+| Command | Purpose | Argument reference |
 | --- | --- | --- |
-| `provider github check` | 检查分支保护、review 和状态检查配置 | [查看 GitHub 参数 →](/reference/command-github#check) |
+| `provider github check` | Check branch protection, review, and status-check configuration. | [View GitHub arguments →](/reference/command-github#check) |
 
-## 环境与会话
+## Environment and sessions
 
-| 命令 | 作用 | 参数说明 |
+| Command | Purpose | Argument reference |
 | --- | --- | --- |
-| `env` | 列出已配置环境命令 | [查看 `env` 说明 →](/reference/command-environment#env) |
-| `env check` | 依次运行 `bootstrap`、`verify`、`e2e`、`health` | [查看 `env check` 说明 →](/reference/command-environment#env-check) |
-| `session close` | 汇总审核、环境、Git 和功能状态 | [查看 `session close` 说明 →](/reference/command-environment#session-close) |
+| `env` | List configured environment commands. | [View `env` details →](/reference/command-environment#env) |
+| `env check` | Run `bootstrap`, `verify`, `e2e`, and `health` in sequence. | [View `env check` details →](/reference/command-environment#env-check) |
+| `session close` | Summarize governance, environment, Git, and feature status. | [View `session close` details →](/reference/command-environment#session-close) |
 
-## 反馈
+## Feedback
 
-| 命令 | 作用 | 参数说明 |
+| Command | Purpose | Argument reference |
 | --- | --- | --- |
-| `feedback log` | 在反馈日志顶部写入结构化条目 | [查看 `feedback log` 参数 →](/reference/command-feedback#log) |
+| `feedback log` | Write a structured entry at the top of the feedback log. | [View `feedback log` arguments →](/reference/command-feedback#log) |
 
-## 通用默认值
+## Common defaults
 
-| 参数 | 默认值 |
+| Argument | Default |
 | --- | --- |
-| `--owner` | `harness.config.json.defaultOwner` |
-| `--ttl` | 120 分钟 |
+| Claim and lifecycle `--owner` | `harness.config.json.defaultOwner` |
+| GitHub repository `--owner` for `provider github check` and `evidence import` | Inferred from `origin`; required when it cannot be inferred |
+| `--ttl` | 120 minutes |
 | `--remote` | `origin` |
 | `--branch` | `main` |
 | `--base` | `main` |
 
-`--actor` 的默认值因命令而异，具体以对应参数页为准。
+The default for `--actor` varies by command. See the corresponding argument page.
 
 <Warning>
-  `init --force` 和 `workspace ... --force` 可能覆盖文件或丢弃未提交、未推送的工作。使用前先阅读对应参数页和命令输出。
+  `init --force` and `workspace ... --force` can overwrite files or discard uncommitted or unpushed work. Read the corresponding argument page and command output before using them.
 </Warning>

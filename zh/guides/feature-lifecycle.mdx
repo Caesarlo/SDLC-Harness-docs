@@ -1,0 +1,75 @@
+---
+title: "功能生命周期"
+description: "安全地创建、开始、阻塞、恢复和完成功能。"
+icon: "arrows-rotate"
+---
+
+功能状态只有 `not_started`、`in_progress`、`blocked` 和 `passing`。优先通过生命周期命令更新，不要直接编辑状态和 claim。
+
+## 创建
+
+```bash
+npx @caesarlo/sdlc-harness new-feature
+npx @caesarlo/sdlc-harness new-feature --input planning/feature.json
+```
+
+[查看 `new-feature` 参数说明 →](/zh/reference/command-planning#new-feature)
+
+输入文件必须位于仓库内，且不能预置 claim、证据、workspace 或完成状态。创建前会验证 ID、里程碑、依赖、verification 和来源引用；失败不会修改状态文件。
+
+## 开始
+
+```bash
+npx @caesarlo/sdlc-harness feature start M1-AUTH-001 --owner alice --actor codex-1 --ttl 120
+```
+
+[查看 `feature start` 参数说明 →](/zh/reference/command-feature#start)
+
+开始前会根据功能状态和依赖检查功能是否 ready，再检查 owner 的 WIP 上限。成功后会原子建立 claim 和租约，并让功能进入 `in_progress`；不要求预先持有 claim。
+
+## 验证与评审
+
+```bash
+npx @caesarlo/sdlc-harness verify M1-AUTH-001
+npx @caesarlo/sdlc-harness review record M1-AUTH-001 \
+  --reviewer bob --summary "验收行为与回归测试通过"
+```
+
+参数说明：[执行自动验证](/zh/reference/command-evidence#verify) · [记录评审](/zh/reference/command-evidence#review-record)
+
+自动 verification 由 `verify` 执行；手工 verification 使用 `evidence manual`。评审必须通过、晚于最新验证，并由不同于 claim owner 的评审者记录。
+
+## 完成
+
+```bash
+npx @caesarlo/sdlc-harness feature complete M1-AUTH-001 --owner alice
+```
+
+[查看 `feature complete` 参数说明 →](/zh/reference/command-feature#complete)
+
+命令要求有效 claim、依赖通过、当前 commit 的全部 verification 已通过，以及更晚的独立评审。满足后才原子切换为 `passing`。
+
+## 阻塞和恢复
+
+```bash
+npx @caesarlo/sdlc-harness feature block M1-AUTH-001 --reason "等待身份提供商测试账号"
+npx @caesarlo/sdlc-harness feature reopen M1-AUTH-001
+```
+
+参数说明：[阻塞功能](/zh/reference/command-feature#block) · [重新打开功能](/zh/reference/command-feature#reopen)
+
+block 会写入 blocker、释放 claim 并进入 `blocked`。reopen 会清除 blocker 并返回 `not_started`，之后需要重新开始。
+
+## 释放
+
+```bash
+npx @caesarlo/sdlc-harness release M1-AUTH-001 --owner alice
+```
+
+[查看 `release` 参数说明 →](/zh/reference/command-claim#release)
+
+release 用于放弃仍在进行的工作，会清除 claim 并把 `in_progress` 恢复为 `not_started`。它不是完成功能的步骤。
+
+<Important>
+  `passing` 默认是单调状态。需要修改已完成功能时，创建一个新功能追踪变更，不要把旧功能改回未完成状态。
+</Important>

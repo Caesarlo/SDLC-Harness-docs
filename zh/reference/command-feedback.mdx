@@ -1,0 +1,28 @@
+---
+title: "反馈命令"
+description: "feedback log 的参数、枚举值和写入行为。"
+icon: "comment-dots"
+---
+
+## `feedback log` {#log}
+
+把一条结构化反馈写到 `docs/product/feedback-log.md` 顶部。
+
+```bash
+npx @caesarlo/sdlc-harness feedback log \
+  --source <text> --severity <S1|S2|S3|S4> \
+  --observation <text> \
+  --disposition <Actioned|Deferred|Declined|Monitoring> \
+  [--detail <text>] [--date <YYYY-MM-DD>]
+```
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- |
+| `--source` | string | 是 | — | 非空反馈来源，例如用户、工单或访谈名称。 |
+| `--severity` | enum | 是 | — | 仅允许 `S1`、`S2`、`S3`、`S4`，区分大小写。 |
+| `--observation` | string | 是 | — | 非空观察结果；含空格时使用引号。 |
+| `--disposition` | enum | 是 | — | 仅允许 `Actioned`、`Deferred`、`Declined`、`Monitoring`。 |
+| `--detail` | string | 条件必填 | — | disposition 为 `Deferred` 或 `Declined` 时必须说明原因。 |
+| `--date` | string | 否 | 当前 UTC 日期 | 建议使用 `YYYY-MM-DD`。当前 CLI 不校验日期格式。 |
+
+命令会在需要时创建反馈日志，并始终把新条目插入顶部。参数非法或写入失败时返回非零。

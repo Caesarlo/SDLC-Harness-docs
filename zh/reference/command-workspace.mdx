@@ -1,0 +1,50 @@
+---
+title: "Workspace 命令"
+description: "创建、查看、移除和清理 Git worktree workspace。"
+icon: "code-branch"
+---
+
+Workspace 使用 Git worktree 为功能创建隔离目录和 `feature/<feature-id>` 分支。
+
+## `workspace create` {#create}
+
+```bash
+npx @caesarlo/sdlc-harness workspace create <feature-id> [--base <branch>]
+```
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- |
+| `<feature-id>` | string | 是 | — | 必须持有有效 claim 且尚无 workspace 的功能 ID。 |
+| `--base` | Git ref string | 否 | `main` | 新功能分支的基础分支或 ref，必须可由 Git 解析。 |
+
+成功后创建 `.worktrees/<feature-id>`、`feature/<feature-id>` 分支，并把 workspace 元数据写入 `feature_list.json`。
+
+## `workspace status` {#status}
+
+```bash
+npx @caesarlo/sdlc-harness workspace status
+```
+
+该命令没有参数。它以 JSON 输出已登记 workspace 的路径、分支、基础提交、claim 是否有效以及目录是否仍存在，不修改仓库。
+
+## `workspace remove` {#remove}
+
+```bash
+npx @caesarlo/sdlc-harness workspace remove <feature-id> [--force]
+```
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- |
+| `<feature-id>` | string | 是 | — | 已登记 workspace 的功能 ID。 |
+| `--force` | boolean | 否 | `false` | 即使存在未提交修改或未推送 commit 也强制移除。 |
+
+默认情况下，命令会保护未提交或未推送工作。成功移除 worktree、功能分支和 workspace 元数据。
+
+## `workspace prune` {#prune}
+
+```bash
+npx @caesarlo/sdlc-harness workspace prune [--force]
+```
+
+只考虑 claim 已释放或过期的 workspace；有效 claim 对应的 workspace 永远跳过。默认跳过有未提交或未推送工作的目录，`--force` 会强制移除这些目录。
+

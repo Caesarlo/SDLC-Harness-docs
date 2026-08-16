@@ -1,0 +1,146 @@
+---
+title: "日常工作流"
+description: "从会话开始、选择功能、实现验证到评审、完成和会话收尾。"
+icon: "list-check"
+---
+
+日常工作围绕一个原则展开：一次只推进一个可独立验证的功能，并让仓库状态始终能被下一位开发者或 Agent 接手。
+
+## 1. 会话开始：读取而不是猜测
+
+```bash
+npx @caesarlo/sdlc-harness status
+npx @caesarlo/sdlc-harness validate
+```
+
+参数说明：[读取状态](/zh/reference/command-repository#status) · [运行审核](/zh/reference/command-repository#validate)
+
+同时读取 `AGENTS.md`、`feature_list.json`、相关 `source_refs` 和 `progress.md`。先处理已有审核错误，再开始新工作。
+
+`status` 会给出 active、ready、blocked 功能，审批状态、追溯缺口和建议的下一步。字段解释见[状态与追溯输出](/zh/reference/status-and-traceability-output)。
+
+## 2. 规划：只在需要时创建
+
+```bash
+npx @caesarlo/sdlc-harness new-milestone
+npx @caesarlo/sdlc-harness new-feature
+```
+
+参数说明：[创建里程碑](/zh/reference/command-planning#new-milestone) · [创建功能](/zh/reference/command-planning#new-feature)
+
+Agent 自动创建功能时，使用仓库内 JSON 输入文件：
+
+```bash
+npx @caesarlo/sdlc-harness new-feature --input .harness-input/feature.json
+```
+
+[查看 `--input` 参数说明 →](/zh/reference/command-planning#new-feature)
+
+输入不能注入 claim、workspace、证据或已完成状态。功能应描述可观察行为，包含至少一个 verification，并通过 `source_refs` 连接需求、用户故事、验收标准或 ADR。
+
+## 3. 开始：选择 ready 工作
+
+推荐使用统一生命周期入口：
+
+```bash
+npx @caesarlo/sdlc-harness feature start <feature-id>
+```
+
+[查看 `feature start` 参数说明 →](/zh/reference/command-feature#start)
+
+团队也可以显式认领指定功能或最高优先级的 ready 功能：
+
+```bash
+npx @caesarlo/sdlc-harness claim <feature-id> --owner alice
+npx @caesarlo/sdlc-harness claim --next --owner alice
+```
+
+参数说明：[认领指定功能](/zh/reference/command-claim#claim) · [自动选择功能](/zh/reference/command-claim#next)
+
+`priority` 数字越小越优先；没有 priority 的功能排在有 priority 的功能之后，并保持列表顺序。
+
+## 4. 隔离：按需创建 workspace
+
+```bash
+npx @caesarlo/sdlc-harness workspace create <feature-id> --base main
+```
+
+[查看 `workspace create` 参数说明 →](/zh/reference/command-workspace#create)
+
+该命令为已认领功能创建 `.worktrees/<feature-id>` 和 `feature/<id>` 分支。单人小改动可以不创建；并行 Agent 或容易冲突的修改建议使用。
+
+## 5. 实现：遵循项目测试策略
+
+读取 `harness.config.json` 的 `testStrategy` 和 `docs/workflow/06-agile-tdd.md`。实现过程中只修改当前功能所需范围；发现额外工作时创建新功能，不要无声扩大范围。
+
+自动验证：
+
+```bash
+npx @caesarlo/sdlc-harness verify <feature-id>
+```
+
+[查看 `verify` 参数说明 →](/zh/reference/command-evidence#verify)
+
+手工 verification 不能作为 shell 命令执行，使用：
+
+```bash
+npx @caesarlo/sdlc-harness evidence manual <feature-id> \
+  --verification 1 --result passed \
+  --notes "在 Windows 11 上完成键盘操作检查" --actor alice
+```
+
+[查看 `evidence manual` 参数说明 →](/zh/reference/command-evidence#manual)
+
+## 6. 评审：在最新验证之后
+
+```bash
+npx @caesarlo/sdlc-harness review record <feature-id> \
+  --reviewer bob --result passed \
+  --summary "验收行为、失败路径和回归测试均符合要求"
+```
+
+[查看 `review record` 参数说明 →](/zh/reference/command-evidence#review-record)
+
+评审者必须独立于 claim owner。任何影响验证结论的后续代码修改都应重新运行 `verify` 并记录评审。
+
+## 7. 完成：让 CLI 原子检查门禁
+
+```bash
+npx @caesarlo/sdlc-harness feature complete <feature-id> --owner alice
+npx @caesarlo/sdlc-harness validate
+```
+
+参数说明：[完成功能](/zh/reference/command-feature#complete) · [运行仓库审核](/zh/reference/command-repository#validate)
+
+完成失败时不要直接编辑状态；按错误恢复有效 claim、解决依赖失败、重新执行当前 commit 的验证，或记录更晚的通过评审。
+
+遇到外部阻塞时：
+
+```bash
+npx @caesarlo/sdlc-harness feature block <feature-id> --reason "等待测试账号"
+npx @caesarlo/sdlc-harness feature reopen <feature-id>
+```
+
+参数说明：[阻塞功能](/zh/reference/command-feature#block) · [重新打开功能](/zh/reference/command-feature#reopen)
+
+block 会记录原因并释放 claim；reopen 会清除 blocker 并返回 `not_started`。
+
+## 8. 会话收尾：留下可接手状态
+
+```bash
+npx @caesarlo/sdlc-harness session close
+```
+
+[查看 `session close` 命令说明 →](/zh/reference/command-environment#session-close)
+
+它会运行 `validate`、已配置的环境检查，并汇总 Git 状态、功能数量和下一步。未提交变更会被报告，但不会单独导致失败；审核或环境检查失败会返回非零退出码。
+
+不再需要 workspace 时再执行：
+
+```bash
+npx @caesarlo/sdlc-harness workspace remove <feature-id>
+```
+
+[查看 `workspace remove` 参数说明 →](/zh/reference/command-workspace#remove)
+
+工具会拒绝移除含未提交或未推送工作的 workspace。`--force` 只应在明确接受丢失这些内容时使用。

@@ -1,91 +1,91 @@
 ---
 title: "SDLC Harness"
-description: "把需求、功能状态、验证证据和交付规则保存在代码仓库中，让开发者与编码 Agent 按同一套规则协作。"
+description: "Keep requirements, feature state, verification evidence, and delivery rules in the repository so developers and coding agents follow the same process."
 icon: "route"
 ---
 
-SDLC Harness 是面向开发者和编码 Agent 的仓库原生 SDLC 治理工具。它把需求、架构决策、功能状态、依赖关系和验证证据与代码放在一起，并用可执行门禁阻止不完整或不一致的交付。
+SDLC Harness is a repository-native SDLC governance tool for developers and coding agents. It keeps requirements, architecture decisions, feature state, dependencies, and verification evidence with the code, then uses executable gates to prevent incomplete or inconsistent delivery.
 
 ```bash
 npx @caesarlo/sdlc-harness adopt
 ```
 
-[查看 `adopt` 命令说明 →](/reference/command-repository#adopt)
+[Read the `adopt` command reference →](/reference/command-repository#adopt)
 
 <CardGroup cols={2}>
-  <Card title="10 分钟接入" icon="rocket" href="/quickstart">
-    在已有仓库或空仓库中生成协议，启用 Git hook，并完成第一个功能。
+  <Card title="Get started in 10 minutes" icon="rocket" href="/quickstart">
+    Generate the protocol in an existing or empty repository, enable the Git hook, and complete your first feature.
   </Card>
-  <Card title="为什么需要它" icon="circle-question" href="/concepts/why-sdlc-harness">
-    了解编码 Agent 跨会话和并行协作时常见的失效模式。
+  <Card title="Why use it" icon="circle-question" href="/concepts/why-sdlc-harness">
+    Learn about common failure modes when coding agents work across sessions or in parallel.
   </Card>
-  <Card title="完整日常流程" icon="list-check" href="/guides/daily-workflow">
-    从选择任务到验证、评审、完成和会话收尾。
+  <Card title="Daily workflow" icon="list-check" href="/guides/daily-workflow">
+    Follow the full path from selecting work through verification, review, completion, and session closeout.
   </Card>
-  <Card title="命令参考" icon="terminal" href="/reference/commands">
-    查询全部命令、参数、前置条件和状态变化。
+  <Card title="Command reference" icon="terminal" href="/reference/commands">
+    Look up every command, option, prerequisite, and state transition.
   </Card>
 </CardGroup>
 
-## 它解决什么问题
+## What it solves
 
-编码 Agent 可以快速修改代码，但工作一旦跨越会话、设备或多个 Agent，常见问题就会出现：上下文只留在聊天里、功能被过早宣布完成、测试与需求失去关联、多个 Agent 同时修改同一任务。
+Coding agents can change code quickly, but recurring problems appear when work spans sessions, devices, or multiple agents: context remains trapped in chat, features are declared complete too early, tests lose their connection to requirements, and multiple agents modify the same task.
 
-SDLC Harness 让仓库成为唯一状态源：
+SDLC Harness makes the repository the single source of truth:
 
-- `AGENTS.md` 和 `docs/workflow/` 保存 Agent 的工作协议。
-- `feature_list.json` 保存里程碑、功能、依赖、状态、claim 和证据。
-- [`sdlc-harness verify`](/reference/command-evidence#verify) 真实执行功能声明的验证命令。
-- [`sdlc-harness review record`](/reference/command-evidence#review-record) 记录独立评审结论。
-- [`sdlc-harness feature complete`](/reference/command-feature#complete) 原子检查完成条件并更新状态。
-- [`sdlc-harness validate`](/reference/command-repository#validate) 审核整个仓库，并用非零退出码阻止不合规提交。
-- `.harness/events/` 保存可随 Git 同步的追加式审计日志。
+- `AGENTS.md` and `docs/workflow/` store the agent working protocol.
+- `feature_list.json` stores milestones, features, dependencies, `status`, `claim`, and evidence.
+- [`sdlc-harness verify`](/reference/command-evidence#verify) executes the verification commands declared by a feature.
+- [`sdlc-harness review record`](/reference/command-evidence#review-record) records the outcome of an independent review.
+- [`sdlc-harness feature complete`](/reference/command-feature#complete) atomically checks completion conditions and updates feature state.
+- [`sdlc-harness validate`](/reference/command-repository#validate) audits the entire repository and blocks noncompliant commits with a nonzero exit code.
+- `.harness/events/` stores an append-only audit log that can be synchronized through Git.
 
-## 一条可信的完成链
+## A trustworthy completion chain
 
 ```mermaid placement="top-right" actions={true}
 flowchart LR
-  A["选择 ready 功能"] --> B["feature start"]
-  B --> C["实现"]
+  A["Select a ready feature"] --> B["feature start"]
+  B --> C["Implement"]
   C --> D["verify"]
   D --> E["review record"]
   E --> F["feature complete"]
   F --> G["validate"]
-  G -->|通过| H["提交 / CI"]
-  G -->|失败| C
+  G -->|Pass| H["Commit / CI"]
+  G -->|Fail| C
 ```
 
 <Important>
-  `verify` 运行功能检查，`review record` 记录独立评审，`feature complete` 判断该功能能否完成，`validate` 审核整个仓库。它们不能相互替代。
+  `verify` runs a feature's verification checks, `review record` records an independent review, `feature complete` decides whether that feature can be completed, and `validate` audits the entire repository. They are not interchangeable.
 </Important>
 
-## 核心能力
+## Core capabilities
 
 <CardGroup cols={2}>
-  <Card title="Agent 无关" icon="robot">
-    Codex、Claude Code 和其他能读取仓库文件的 Agent 都能使用同一套协议。
+  <Card title="Agent-independent" icon="robot">
+    Codex, Claude Code, and any other agent that can read repository files can follow the same protocol.
   </Card>
-  <Card title="证据绑定代码" icon="fingerprint">
-    验证、评审和审批记录绑定 commit 或内容哈希，避免一句“已经通过”替代事实。
+  <Card title="Evidence bound to code" icon="fingerprint">
+    Verification, review, and approval records bind to a commit or content hash, so a claim that something passed cannot replace evidence.
   </Card>
-  <Card title="本地与 CI 同规则" icon="shield-check">
-    Git hook 和 CI 运行同一个 `validate`，失败原因具有稳定分类。
+  <Card title="The same rules locally and in CI" icon="shield-check">
+    The Git hook and CI run the same `validate` audit, with stable categories for failures.
   </Card>
-  <Card title="支持并行协作" icon="people-group">
-    claim、租约、WIP 上限和 Git worktree 降低多人、多 Agent 冲突。
+  <Card title="Parallel collaboration" icon="people-group">
+    `claim`, leases, WIP limits, and Git `worktree` isolation reduce conflicts across people and agents.
   </Card>
-  <Card title="端到端追溯" icon="link">
-    把需求、用户故事、验收标准、功能和验证项串成可检查的矩阵。
+  <Card title="End-to-end traceability" icon="link">
+    Requirements, user stories, acceptance criteria, features, and verification items form an auditable matrix.
   </Card>
-  <Card title="交付后闭环" icon="rotate">
-    环境检查、部署策略和反馈日志把流程延伸到运行与改进阶段。
+  <Card title="A post-delivery feedback loop" icon="rotate">
+    Environment checks, deployment policies, and feedback logs extend the process into operations and improvement.
   </Card>
 </CardGroup>
 
-## 适用边界
+## Scope and limits
 
-SDLC Harness 是协议和治理层，不是测试框架、编码 Agent、项目管理系统或需求正确性证明工具。它保证过程可追踪、证据可核验、规则可执行；实际产品判断、测试内容和部署命令仍由你的项目负责。
+SDLC Harness is a protocol and governance layer. It is not a test framework, coding agent, project management system, or proof that requirements are correct. It makes the process traceable, the evidence auditable, and the rules executable; your project still owns product judgment, test content, and deployment commands.
 
-<Card title="开始接入" icon="arrow-right" href="/quickstart">
-  把 SDLC Harness 接入仓库并完成第一条可信交付链。
+<Card title="Get started" icon="arrow-right" href="/quickstart">
+  Add SDLC Harness to a repository and complete your first trustworthy delivery chain.
 </Card>

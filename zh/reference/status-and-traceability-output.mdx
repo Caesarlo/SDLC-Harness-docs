@@ -1,0 +1,64 @@
+---
+title: "状态与追溯输出"
+description: "解释 status 和 traceability 的 JSON 字段，方便开发者、Agent 与脚本使用。"
+icon: "code"
+---
+
+## `status`
+
+```bash
+npx @caesarlo/sdlc-harness status
+```
+
+[查看 `status` 命令说明 →](/zh/reference/command-repository#status)
+
+| 字段 | 含义 |
+| --- | --- |
+| `project` | 项目名称 |
+| `counts` | 四种功能状态的数量 |
+| `activeFeatures` | 当前 `in_progress` 功能。每个条目始终包含 `id`、`behavior` 和 `owner`；仅当功能定义 `title` 时才包含 `title`。 |
+| `readyFeatures` | 依赖通过且可开始的功能，按优先级排序；摘要还包含 `dependencies` 和 `sourceRefs` |
+| `blockedFeatures` | 被阻塞功能及 blocker；摘要还包含 `dependencies` 和 `sourceRefs` |
+| `artifactApprovals` | 项目制品审批及当前有效性 |
+| `traceability` | 追溯是否适用、是否延期、是否完整和各类缺口 |
+| `nextActions` | 根据当前状态生成的建议动作 |
+| `milestoneCount` | 里程碑数量 |
+
+`activeFeatures` 条目始终包含 `id`、`behavior` 和 `owner`；仅当功能定义 `title` 时才包含 `title`。`readyFeatures` 与 `blockedFeatures` 摘要还包含 `dependencies` 和 `sourceRefs`，适合 Agent 在不自行遍历整个 JSON 的情况下选择下一步。
+
+```json
+{
+  "counts": {
+    "not_started": 2,
+    "in_progress": 1,
+    "blocked": 0,
+    "passing": 4
+  },
+  "nextActions": [
+    "Continue M1-AUTH-001; run verify, record review, then feature complete."
+  ]
+}
+```
+
+## `traceability`
+
+```bash
+npx @caesarlo/sdlc-harness traceability
+```
+
+[查看 `traceability` 命令说明 →](/zh/reference/command-repository#traceability)
+
+完整矩阵包含解析出的 requirements、stories、acceptance criteria、features 和 verification 映射，以及下列诊断：
+
+- `applicable`：当前仓库是否已进入真实追溯检查范围。
+- `deferred`：是否仍因 scope placeholder 而延期。
+- `ok`：矩阵是否无缺口。
+- `uncoveredRequirements`、`orphanStories`、`orphanFeatures`。
+- `uncoveredAcceptanceCriteria`、`unverifiedAcceptanceCriteria`。
+- `unknownReferences`：未知 requirement、story 或验收标准 ID，以及 verification 引用了功能自身未声明的验收标准。路径存在性由 `validate` 的 `[stage-gate]` 单独检查。
+
+`status` 正常读取时不会因治理缺口失败，并提供观察视图；加载或解析错误仍可能使它返回非零。`traceability` 在适用且存在实际缺口时返回非零，适合 CI 门禁。
+
+<Tip>
+  脚本消费这些命令时使用 JSON 解析，不要依赖字段顺序或自然语言 `nextActions`。后者主要用于开发者和 Agent 导航。
+</Tip>

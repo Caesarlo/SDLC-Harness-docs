@@ -1,0 +1,67 @@
+---
+title: "功能生命周期命令"
+description: "feature start、complete、block 和 reopen 的参数与门禁。"
+icon: "diagram-project"
+---
+
+`feature` 子命令改变功能状态。所有 `<feature-id>` 都是 `feature_list.json` 中已存在功能的字符串 ID。
+
+## `feature start` {#start}
+
+认领一个 ready 功能并进入 `in_progress`。
+
+```bash
+npx @caesarlo/sdlc-harness feature start <feature-id> \
+  [--owner <name>] [--actor <id>] [--ttl <minutes>]
+```
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- |
+| `<feature-id>` | string | 是 | — | 要启动的功能 ID。状态必须为 `not_started`，且所有依赖均为 `passing`。 |
+| `--owner` | string | 否 | `harness.config.json.defaultOwner` | claim 的责任主体，也参与每个 owner 的 WIP 限制。 |
+| `--actor` | string | 否 | owner | 发起 claim 的具体 Agent 或会话标识。 |
+| `--ttl` | number | 否 | `120` | claim 租约分钟数。当前 CLI 将输入转换为数字，但尚未强制校验正整数。 |
+
+## `feature complete` {#complete}
+
+通过完成门禁后，把功能设置为 `passing`。
+
+```bash
+npx @caesarlo/sdlc-harness feature complete <feature-id> [--owner <name>]
+```
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- |
+| `<feature-id>` | string | 是 | — | 要完成的功能 ID。占位功能不能直接完成。 |
+| `--owner` | string | 否 | `defaultOwner` | 必须与有效 claim 的 owner 相同。 |
+
+命令要求功能处于 `in_progress`、claim 有效、依赖全部为 `passing`，并且当前 commit 的每个验证项都有通过证据。通过 review 必须晚于验证证据，且 reviewer 不能是 claim owner。成功后清除 claim 和 blocker。
+
+## `feature block` {#block}
+
+记录阻塞原因、释放 claim 并把功能设置为 `blocked`。
+
+```bash
+npx @caesarlo/sdlc-harness feature block <feature-id> \
+  --reason <text> [--owner <name>]
+```
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- |
+| `<feature-id>` | string | 是 | — | 要阻塞的功能 ID。`passing` 功能不能回退为 `blocked`。 |
+| `--reason` | string | 是 | — | 非空阻塞原因；含空格时使用引号。 |
+| `--owner` | string | 否 | `defaultOwner` | 存在有效 claim 时必须与其 owner 相同。 |
+
+## `feature reopen` {#reopen}
+
+清除 blocker，把 `blocked` 功能恢复为 `not_started`。
+
+```bash
+npx @caesarlo/sdlc-harness feature reopen <feature-id> [--actor <id>]
+```
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- |
+| `<feature-id>` | string | 是 | — | 必须处于 `blocked` 的功能 ID。 |
+| `--actor` | string | 否 | `defaultOwner` | 记录到 reopen 事件中的操作主体。 |
+

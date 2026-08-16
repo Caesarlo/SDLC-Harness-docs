@@ -1,55 +1,55 @@
 ---
-title: "生成的文件"
-description: "了解 init 或 adopt 写入的仓库协议、自动化文件和版本控制边界。"
+title: "Generated files"
+description: "Learn which repository protocols and automation files init or adopt creates, and which files belong in version control."
 icon: "folder-tree"
 ---
 
-`init` 和 `adopt` 把 SDLC Harness 的协议直接安装到目标仓库。`init` 适合空仓库；`adopt` 适合已有项目并且不会覆盖现有文件。
+`init` and `adopt` install the SDLC Harness protocol directly into the target repository. Use `init` for an empty repository. Use `adopt` for an existing project; it does not overwrite existing files.
 
-## 核心状态与协议
+## Core state and protocol
 
-| 路径 | 用途 | 是否建议提交 |
+| Path | Purpose | Commit it? |
 | --- | --- | --- |
-| `AGENTS.md` | Agent 启动规则、Routing Map 和会话要求 | 是 |
-| `AGENTS.sdlc-harness.md` | 已有 `AGENTS.md` 时生成的 sidecar 协议 | 是，并从原文件引用 |
-| `feature_list.json` | 里程碑、功能、依赖、状态、claim、workspace 和证据 | 是 |
-| `feature_list.schema.json` | `feature_list.json` 的机器可读结构 | 是 |
-| `harness.config.json` | 项目级协作、阶段和环境命令配置 | 是 |
-| `progress.md` | 跨会话检查点 | 是 |
+| `AGENTS.md` | Agent startup rules, Routing Map, and session requirements | Yes |
+| `AGENTS.sdlc-harness.md` | Sidecar protocol generated when `AGENTS.md` already exists | Yes, and reference it from the original file |
+| `feature_list.json` | Milestones, features, dependencies, `status`, `claim`, `workspace`, and evidence | Yes |
+| `feature_list.schema.json` | Machine-readable structure for `feature_list.json` | Yes |
+| `harness.config.json` | Project-level collaboration, stage, and environment command configuration | Yes |
+| `progress.md` | Cross-session checkpoint | Yes |
 
-## 设计与工作流文档
+## Design and workflow documentation
 
-`docs/workflow/` 包含九阶段指南；`docs/product/` 保存需求、用户故事和反馈模板；`docs/architecture/` 保存架构概览；`docs/adr/` 保存架构决策。
+`docs/workflow/` contains the nine-stage guides. `docs/product/` stores requirements, user stories, and feedback templates. `docs/architecture/` stores the architecture overview, and `docs/adr/` stores architecture decisions.
 
-这些不是一次性脚手架。Agent 会通过 `AGENTS.md` 路由到相关文档，`validate` 也会检查来源引用、ADR 覆盖和追溯关系。
+These files are not disposable scaffolding. Agents use `AGENTS.md` to route to the relevant documentation, and `validate` checks source references, ADR coverage, and traceability relationships.
 
-## 自动化文件
+## Automation files
 
-| 路径 | 用途 |
+| Path | Purpose |
 | --- | --- |
-| `.githooks/pre-commit` | 提交前运行 `validate` |
-| `.github/workflows/ci.yml` | 在 CI 中审核仓库并预留项目检查 |
-| `.github/workflows/deploy.yml` | 部署前审核并预留真实部署步骤 |
-| `.claude/skills/` | 为 Claude Code 提供工作流发现入口 |
+| `.githooks/pre-commit` | Runs `validate` before a commit |
+| `.github/workflows/ci.yml` | Audits the repository in CI and reserves steps for project checks |
+| `.github/workflows/deploy.yml` | Audits before deployment and reserves a step for the real deployment |
+| `.claude/skills/` | Provides workflow discovery entry points for Claude Code |
 
-Git hook 不会自动启用：
+The Git hook is not enabled automatically:
 
 ```bash
 git config core.hooksPath .githooks
 ```
 
-生成的 CI 和部署模板会在真实项目命令未配置时失败关闭，不会用占位输出冒充成功。接入后应根据仓库实际情况完善它们。
+The generated CI and deployment templates fail closed when real project commands are not configured; placeholder output is not treated as success. Adapt the templates to the repository after adoption.
 
-## 运行状态
+## Runtime state
 
-| 路径 | 行为 |
+| Path | Behavior |
 | --- | --- |
-| `.harness/events/*.jsonl` | 追加式审计日志；建议提交并跨机器同步 |
-| `.harness/last-validated-features.json` | 成功审核生成的派生快照；不提交 |
-| `.worktrees/` | 本地 Git worktree；不提交 |
+| `.harness/events/*.jsonl` | Append-only audit log; commit and synchronize it across machines |
+| `.harness/last-validated-features.json` | Derived snapshot created by a successful repository audit; do not commit |
+| `.worktrees/` | Local Git `worktree` directories; do not commit |
 
-模板生成的 `.gitignore` 会忽略派生快照和 `.worktrees/`，不会忽略审计事件或 `feature_list.json`。
+The generated `.gitignore` ignores the derived snapshot and `.worktrees/`, but does not ignore audit events or `feature_list.json`.
 
 <Warning>
-  `init --force` 会覆盖它预先报告的冲突文件。已有仓库优先使用 `adopt`，并逐项检查其跳过列表。
+  `init --force` overwrites the conflicting files it reports in advance. Prefer `adopt` for an existing repository and inspect each item in its skip list.
 </Warning>

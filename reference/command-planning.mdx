@@ -1,34 +1,34 @@
 ---
-title: "规划命令"
-description: "new-feature 和 new-milestone 的输入、约束与示例。"
+title: "Planning commands"
+description: "Inputs, constraints, and examples for new-feature and new-milestone."
 icon: "list-check"
 ---
 
-规划命令向 `feature_list.json` 增加里程碑或功能。命令使用并发安全写入；ID 已存在或输入违反结构规则时不会部分写入。
+Planning commands add milestones or features to `feature_list.json`. They use compare-and-swap writes and reject duplicate IDs. Interactive commands perform their documented input checks; the full schema and structural preflight applies specifically to `new-feature --input`.
 
 ## `new-feature` {#new-feature}
 
-交互创建功能，或从仓库内 JSON 文件导入功能。
+Create a feature interactively or import one from a JSON file in the repository.
 
 ```bash
 npx @caesarlo/sdlc-harness new-feature
 npx @caesarlo/sdlc-harness new-feature --input planning/feature.json
 ```
 
-| 参数 | 类型 | 必填 | 默认值 | 说明 |
+| Argument | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `--input` | path string | 否 | — | 仓库内现存 JSON 文件的相对路径。指定后使用非交互模式。 |
+| `--input` | path string | No | — | Relative path to an existing JSON file in the repository. When specified, the command runs non-interactively. |
 
-输入对象可以直接是功能对象，也可以写成 `{ "feature": { ... } }`。`id`、`milestone`、`behavior` 和非空 `verification` 数组必填；`milestone` 必须已存在。新功能只能是 `not_started`，不能预置 `claim`、`workspace` 或 `evidence`。完整字段定义见 [`feature_list.json` 参考](/reference/feature-list)。
+The input can be a feature object directly or `{ "feature": { ... } }`. `id`, `milestone`, `behavior`, and a non-empty `verification` array are required. The `milestone` must already exist. A new feature can only have the `not_started` status and cannot include a preconfigured `claim`, `workspace`, or `evidence`. Before writing, this mode runs `[schema]`, `[structural]`, `[dependency-cycles]`, `[milestone-order]`, and `[stage-gate]` checks against the candidate feature list. See the [`feature_list.json` reference](/reference/feature-list) for the full field definitions.
 
-未指定 `--input` 时，命令依次询问 ID、里程碑、标题、可观察行为、owner、验证命令、依赖、来源引用和 priority。priority 必须是整数，数值越小越先被 `claim --next` 选择。
+Without `--input`, the command prompts for the ID, milestone, title, observable behavior, owner, verification commands, dependencies, source references, and priority. Priority must be an integer. Lower values are selected first by `claim --next`.
 
 ## `new-milestone` {#new-milestone}
 
-交互创建里程碑。
+Create a milestone interactively.
 
 ```bash
 npx @caesarlo/sdlc-harness new-milestone
 ```
 
-该命令没有 CLI 参数。它交互询问里程碑 ID、标题、目标和退出条件。ID 必须唯一；成功后向 `feature_list.json` 追加里程碑。
+This command has no CLI arguments. It prompts for the milestone ID, title, and objective. The ID must be unique. On success, it appends the milestone to `feature_list.json`.

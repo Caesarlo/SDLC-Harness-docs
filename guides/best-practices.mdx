@@ -1,44 +1,44 @@
 ---
-title: "使用技巧"
-description: "让开发者和编码 Agent 更稳定地使用 SDLC Harness。"
+title: "Best practices"
+description: "Help developers and coding Agents use SDLC Harness more reliably."
 icon: "lightbulb"
 ---
 
-## 规划与选择
+## Planning and selection
 
-- 让一个功能能在一次 Agent 会话内独立实现和验证；过大时先拆分。
-- 用可观察结果写 `behavior`，不要写内部实现步骤。
-- 用较小的 `priority` 表示更高优先级，配合 `claim --next` 自动选取 ready 工作。
-- 每次开始先看 `status`，不要根据上次聊天记忆猜当前状态。
-- 高风险、跨边界或难以逆转的改变先补 ADR。
+- Keep each feature small enough to implement and verify independently in one Agent session; split it first if it is too large.
+- Write `behavior` as observable outcomes, not internal implementation steps.
+- Use lower `priority` values for higher-priority work, together with `claim --next` to select ready work automatically.
+- Run `status` at the start of every session instead of guessing the current state from the previous conversation.
+- Write an ADR before making high-risk, cross-boundary, or difficult-to-reverse changes.
 
-## 验证与证据
+## Verification and evidence
 
-- verification 使用确定、可重复、返回可靠退出码的命令。
-- 一个验证项只链接它真正证明的验收标准。
-- 自动检查用 `verify`；键盘体验、视觉确认等人工判断声明为 manual 并用 `evidence manual`。
-- 代码改变后重新验证；最新验证之后再 review。
-- 制品获批后如有任何内容变化，主动重新记录 approval。
+- Use deterministic, repeatable commands with reliable exit codes for verification.
+- Link each verification item only to the acceptance criteria it actually demonstrates.
+- Use `verify` for automated checks; declare keyboard experience, visual confirmation, and similar human judgments as manual, then record them with `evidence manual`.
+- Verify again after code changes; record the latest review after the latest verification.
+- If an approved artifact changes in any way, record a new approval.
 
-## 协作
+## Collaboration
 
-- Solo 模式通常不需要显式 claim；Team 模式在工作前先持有有效 claim。
-- owner 表示责任归属，actor 用来区分同一 owner 下的不同 Agent 会话。
-- 长任务在租约过期前 `claim renew`，不要让活跃工作被误判为可接管。
-- 并行 Agent 使用独立 workspace，并让每个 workspace 对应一个功能。
-- 评审者与 claim owner 分离，避免实现者自证完成。
+- In Solo mode, you normally do not need to call the low-level `claim` command, but `feature start` still establishes the lifecycle claim required for the work.
+- `owner` identifies responsibility, while `actor` distinguishes different Agent sessions for the same `owner`.
+- For long-running work, use `claim renew` before the lease expires so active work is not mistaken as available for takeover.
+- Give parallel Agents separate workspaces, with one feature per workspace.
+- Keep the reviewer separate from the claim `owner` so implementers do not review their own completion.
 
-## 会话与 Git
+## Sessions and Git
 
-- 会话结束运行 `session close`，把失败检查、未提交文件和下一步写进交接。
-- 提交 `feature_list.json`、审计事件和协议文档；不要提交本地快照与 `.worktrees/`。
-- 跨机器 claim 使用 `--push`，普通本地 claim 不能提供实时分布式锁。
-- workspace remove 或 prune 前确认工作已提交并推送；不要把 `--force` 当作常规清理选项。
+- Run `session close` at the end of a session, and include failed checks, uncommitted files, and next steps in the handoff.
+- Commit `feature_list.json`, audit events, and protocol documents; do not commit local snapshots or `.worktrees/`.
+- Use `--push` for cross-machine claims. A regular local claim does not provide a real-time distributed lock.
+- Before `workspace remove` or `workspace prune`, confirm that work is committed and pushed; do not treat `--force` as a routine cleanup option.
 
-## 不要直接手改的字段
+## Fields you should not edit directly
 
-claim、workspace、test/review evidence 和生命周期状态应由 CLI 维护。手改可能绕过 owner、commit、时间顺序、WIP 和并发写入检查，留下表面合法但无法可信复现的状态。
+The CLI should maintain claims, workspaces, test/review evidence, and lifecycle states. Manual edits can bypass `owner`, commit, chronology, WIP, and concurrent-write checks, leaving state that appears valid but cannot be reproduced with confidence.
 
 <Tip>
-  给 Agent 的完成要求可以固定为：展示 `verify`、`review record`、`feature complete`、`validate` 和 `session close` 的结果，并说明任何仍未完成的项目。
+  You can give an Agent a standard completion requirement: show the results of `verify`, `review record`, `feature complete`, `validate`, and `session close`, and identify anything that remains incomplete.
 </Tip>

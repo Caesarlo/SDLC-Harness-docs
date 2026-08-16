@@ -1,14 +1,14 @@
 ---
-title: "环境检查与会话收尾"
-description: "配置项目级命令，并在每次 Agent 会话结束时生成可信交接结果。"
+title: "Environment checks and session close"
+description: "Configure project-level commands and produce a trustworthy handoff at the end of each Agent session."
 icon: "laptop-code"
 ---
 
-功能 verification 证明某个功能的行为；环境命令证明项目能安装、构建、运行或接受端到端检查。两者作用不同。
+Feature verification checks the behavior of a specific feature. Environment commands check whether the project can be installed, built, run, or subjected to end-to-end checks. They serve different purposes.
 
-## 配置项目命令
+## Configure project commands
 
-在 `harness.config.json` 中按需配置：
+Configure commands as needed in `harness.config.json`:
 
 ```json
 {
@@ -23,36 +23,36 @@ icon: "laptop-code"
 }
 ```
 
-所有键都可选。当前 CLI 的 `env check` 按 `bootstrap`、`verify`、`e2e`、`health` 顺序执行已配置项，并在第一次失败时停止；`start` 和 `cleanup` 用于工作流文档和项目运行约定，不由 `env check` 自动编排后台进程。
+Every key is optional. The current CLI runs configured commands in `bootstrap`, `verify`, `e2e`, and `health` order during `env check`, stopping at the first failure. `start` and `cleanup` document workflow and project runtime conventions; `env check` does not automatically orchestrate them as background processes.
 
-## 查看与运行
+## List and run checks
 
 ```bash
 npx @caesarlo/sdlc-harness env
 npx @caesarlo/sdlc-harness env check
 ```
 
-参数说明：[列出环境命令](/reference/command-environment#env) · [运行环境检查](/reference/command-environment#env-check)
+Options: [List environment commands](/reference/command-environment#env) · [Run environment checks](/reference/command-environment#env-check)
 
-未配置任何命令时，`env check` 会报告没有内容可检查并成功退出。配置后，每项显示实际命令、PASS/FAIL 和退出码。
+When no commands are configured, `env check` reports that there is nothing to check and exits successfully. Once configured, each item shows the actual command, PASS/FAIL result, and exit code.
 
-## 结束会话
+## Close a session
 
 ```bash
 npx @caesarlo/sdlc-harness session close
 ```
 
-[查看 `session close` 命令说明 →](/reference/command-environment#session-close)
+[See the `session close` command →](/reference/command-environment#session-close)
 
-该命令会：
+This command:
 
-1. 运行仓库级 `validate`。
-2. 运行已配置的环境检查。
-3. 汇总当前 commit 和未提交文件数量。
-4. 输出功能状态与下一步建议。
+1. Runs repository-level `validate`.
+2. Runs the configured environment checks.
+3. Summarizes the current commit and the number of uncommitted files.
+4. Reports feature status and suggested next steps.
 
-审核或环境检查失败会导致非零退出码。未提交变更会明确报告，但它本身不等于失败，因为会话可能有意留下可交接的未提交工作。
+Validation or environment-check failures produce a nonzero exit code. Uncommitted changes are reported explicitly but are not failures by themselves, because a session may intentionally leave uncommitted work for handoff.
 
 <Note>
-  `session close` 是只读报告，不会自动提交、更改功能状态、释放 claim 或删除 workspace。请根据报告完成这些动作。
+  `session close` is a read-only report. It does not commit automatically, change feature state, release a claim, or delete a workspace. Perform those actions as appropriate based on the report.
 </Note>

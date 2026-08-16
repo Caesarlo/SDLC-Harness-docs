@@ -1,0 +1,131 @@
+---
+title: "快速开始"
+description: "用 10 分钟接入 SDLC Harness，并完成第一个功能的验证、评审和审核。"
+icon: "rocket"
+---
+
+## 前置条件
+
+- Node.js 22 或更高版本。
+- 在目标项目的仓库根目录运行命令。
+- 如需 GitHub 治理检查或 CI 证据导入，安装并登录 GitHub CLI `gh`。
+
+本文使用无需预安装的完整写法：`npx @caesarlo/sdlc-harness`。如果已全局安装，可以改用 `sdlc-harness`。
+
+## 1. 接入仓库
+
+<Tabs>
+  <Tab title="已有仓库">
+    ```bash
+    cd your-project
+    npx @caesarlo/sdlc-harness adopt
+    ```
+
+    [查看 `adopt` 命令说明 →](/zh/reference/command-repository#adopt)
+
+    `adopt` 只写入缺失文件，不覆盖已有文件。如果仓库已经有 `AGENTS.md`，工具会生成 `AGENTS.sdlc-harness.md`；按终端提示从原 `AGENTS.md` 引用它，否则新 Agent 会话无法发现 harness。
+  </Tab>
+  <Tab title="空仓库或新仓库">
+    ```bash
+    mkdir your-project
+    cd your-project
+    npx @caesarlo/sdlc-harness init
+    ```
+
+    [查看 `init` 参数说明 →](/zh/reference/command-repository#init)
+
+    `init` 遇到已有目标文件会停止并列出冲突。只有确认允许覆盖时才使用 `--force`。
+  </Tab>
+</Tabs>
+
+生成内容详见[生成的文件](/zh/getting-started/generated-files)。
+
+## 2. 启用提交前审核
+
+```bash
+git config core.hooksPath .githooks
+```
+
+每个 clone 只需配置一次。之后 pre-commit hook 会运行 `validate`。
+
+## 3. 建立基线
+
+```bash
+npx @caesarlo/sdlc-harness validate
+npx @caesarlo/sdlc-harness status
+```
+
+参数说明：[运行仓库审核](/zh/reference/command-repository#validate) · [读取状态 JSON](/zh/reference/command-repository#status)
+
+成功时输出 `All checks passed.`。如果失败，先修复带分类前缀的错误，再开始新工作，这样能区分原有问题和本次改动。
+
+## 4. 让 Agent 读取协议
+
+可以直接告诉编码 Agent：
+
+```text
+先读取仓库根目录的 AGENTS.md、feature_list.json 和当前 progress.md，
+按照 SDLC Harness 的 Routing Map 选择入口，然后只处理一个 ready 功能。
+```
+
+已有 `AGENTS.md` 的接入细节见 [Agent 接入](/zh/getting-started/agent-onboarding)。
+
+## 5. 完成第一个功能
+
+<Steps>
+  <Step title="选择或创建功能">
+    优先从 `status` 的 `readyFeatures` 选择。需要新功能时可以交互创建：
+
+    ```bash
+    npx @caesarlo/sdlc-harness new-feature
+    ```
+
+    [查看 `new-feature` 参数说明 →](/zh/reference/command-planning#new-feature)
+  </Step>
+  <Step title="开始功能">
+    ```bash
+    npx @caesarlo/sdlc-harness feature start <feature-id>
+    ```
+
+    [查看 `feature start` 参数说明 →](/zh/reference/command-feature#start)
+
+    该命令会确认依赖已通过、功能可认领且未超过 `owner` 的 WIP 上限，然后原子地创建 `claim` 并切换到 `in_progress`。
+  </Step>
+  <Step title="实现并运行验证">
+    ```bash
+    npx @caesarlo/sdlc-harness verify <feature-id>
+    ```
+
+    [查看 `verify` 参数说明 →](/zh/reference/command-evidence#verify)
+
+    `verify` 实际执行该功能声明的自动验证命令，并记录退出码、时间和当前 commit SHA。
+  </Step>
+  <Step title="记录独立评审">
+    ```bash
+    npx @caesarlo/sdlc-harness review record <feature-id> \
+      --reviewer reviewer-id \
+      --summary "行为、测试和边界检查通过"
+    ```
+
+    [查看 `review record` 参数说明 →](/zh/reference/command-evidence#review-record)
+
+    reviewer 不能是该功能 `claim` 的 `owner`，且通过评审必须晚于最新一次通过验证。
+  </Step>
+  <Step title="完成并审核仓库">
+    ```bash
+    npx @caesarlo/sdlc-harness feature complete <feature-id>
+    npx @caesarlo/sdlc-harness validate
+    npx @caesarlo/sdlc-harness session close
+    ```
+
+    参数说明：[完成功能](/zh/reference/command-feature#complete) · [审核仓库](/zh/reference/command-repository#validate) · [结束会话](/zh/reference/command-environment#session-close)
+
+    `feature complete` 只有在 `claim`、依赖、当前 commit 验证和后续评审都有效时才会把 `status` 改为 `passing`。
+  </Step>
+</Steps>
+
+<Warning>
+  不要直接手改 `claim`、证据或 `passing` 状态来绕过生命周期命令。CLI 使用原子写入并记录审计事件，能避免并发覆盖和不一致状态。
+</Warning>
+
+下一步阅读[日常工作流](/zh/guides/daily-workflow)或[功能生命周期](/zh/guides/feature-lifecycle)。

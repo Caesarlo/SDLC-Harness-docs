@@ -1,53 +1,53 @@
 ---
-title: "常见问题"
-description: "关于定位、证据、Solo/Team、Git 和适用范围的常见问题。"
+title: "Frequently asked questions"
+description: "Common questions about positioning, evidence, Solo and Team modes, Git, and applicability."
 icon: "circle-question"
 ---
 
-## 它会替代测试框架吗？
+## Does it replace a test framework?
 
-不会。你仍使用 Jest、Vitest、pytest、Playwright 等项目工具。SDLC Harness 负责执行声明的命令、记录结果并检查完成证据。
+No. You continue to use project tools such as Jest, Vitest, pytest, and Playwright. SDLC Harness executes declared commands, records their results, and checks completion evidence.
 
-## 它会替代项目管理工具吗？
+## Does it replace a project management tool?
 
-不会。`feature_list.json` 提供靠近代码、可被 Agent 执行的交付状态。团队仍可使用 Linear、Jira 等进行更高层规划，但应明确哪一侧是开发执行状态源。
+No. `feature_list.json` provides delivery status close to the code that Agents can act on. Teams can still use Linear, Jira, or similar tools for higher-level planning, but should clearly decide which side is the source of truth for development execution status.
 
-## `validate` 会运行测试吗？
+## Does `validate` run tests?
 
-不会。`verify` 运行功能 verification；`env check` 运行项目级环境命令；`validate` 只审核仓库状态和证据。
+No. `verify` runs feature verification, `env check` runs project-level environment commands, and `validate` only audits repository state and evidence.
 
-## 为什么 `verify` 通过还不能完成？
+## Why can't I complete a feature after `verify` passes?
 
-测试通过只是条件之一。还需要有效 claim、依赖通过、当前 commit 的全部验证证据，以及在最新验证之后由不同 reviewer 记录的通过评审。
+Passing tests is only one condition. You also need an active claim, passing dependencies, evidence for every verification item at the current commit, and a passing review recorded after the latest verification by a different reviewer.
 
-## Solo 模式为什么仍有 claim 字段？
+## Why does Solo mode still have claim fields?
 
-底层仍用 claim 防止同一台机器上的两个 Agent 并发写入。Solo 只隐藏常规操作负担：`verify` 会按需临时认领和释放。
+A claim is not a file lock and cannot prevent arbitrary concurrent writes. It coordinates same-feature work among participants that follow the protocol. Claim-aware operations such as `verify` and `feature complete` enforce that coordination. Solo mode only hides routine operations: `verify` creates and releases a temporary claim as needed.
 
-## 多个 Agent 可以使用同一个 owner 吗？
+## Can multiple Agents use the same owner?
 
-可以，用不同 actor 区分会话。但 WIP 上限按 owner 计算，且同一功能仍只能有一个 claim。独立 reviewer 必须使用不同于 claim owner 的身份。
+Yes. Use different actors to distinguish sessions. The WIP limit is calculated by owner, and each feature can still have only one claim. An independent reviewer must use an identity different from the claim owner.
 
-## 可以手改 `feature_list.json` 吗？
+## Can I edit `feature_list.json` manually?
 
-可以维护计划性字段，但 claim、workspace、证据、blocker 和状态转换应使用 CLI。`new-feature --input` 是 Agent 创建功能的安全非交互入口。
+You can maintain planning fields, but use the CLI for claim, workspace, evidence, blocker, and status transitions. `new-feature --input` is the safe non-interactive entry point for an Agent to create a feature.
 
-## 哪些文件要提交？
+## Which files should I commit?
 
-提交协议、配置、`feature_list.json`、需求/ADR/工作流、Git hook、CI 模板和 `.harness/events/*.jsonl`。不要提交 `.harness/last-validated-features.json` 与 `.worktrees/`。
+Commit the protocol, configuration, `feature_list.json`, requirements, ADRs, workflows, Git hooks, CI templates, and `.harness/events/*.jsonl`. Do not commit `.harness/last-validated-features.json` or `.worktrees/`.
 
-## 功能已经 passing，但需要修改怎么办？
+## A feature is already passing but needs a change. What should I do?
 
-创建一个新功能描述回归、增强或迁移。默认单调规则会阻止旧功能悄悄回退，保留历史结论的可解释性。
+Create a new feature describing the regression, enhancement, or migration. The default monotonicity rule prevents an old feature from silently regressing and preserves an explainable historical conclusion.
 
-## 没有部署目标的库也能用吗？
+## Can a library with no deployment target use it?
 
-可以。设置 `deploymentMode: "none"`，并根据是否需要反馈日志选择 `observabilityMode: "feedback-only"` 或 `"none"`。
+Yes. Set `deploymentMode: "none"`, then choose `observabilityMode: "feedback-only"` or `"none"` depending on whether you need a feedback log.
 
-## claim 是分布式锁吗？
+## Is a claim a distributed lock?
 
-不是。它是存储在 Git 状态中的可审计租约。跨机器使用 `claim --push` 并及时同步远端，仍要接受 Git 无实时锁的限制。
+No. It is an auditable lease stored in Git state. It coordinates same-feature work among participants that follow the protocol; it cannot lock files or prevent arbitrary writes. For cross-machine use, run `claim --push` and synchronize the remote promptly, while accepting that Git does not provide real-time locking.
 
-## 它能证明需求是正确的吗？
+## Can it prove that requirements are correct?
 
-不能。它能证明需求、功能、验收标准和证据之间存在可检查关系，但产品判断、需求质量和测试充分性仍需要人和团队负责。
+No. It can show checkable relationships among requirements, features, acceptance criteria, and evidence. Product judgment, requirement quality, and test sufficiency remain the responsibility of people and teams.

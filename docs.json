@@ -2,7 +2,7 @@
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
   "name": "SDLC Harness",
-  "description": "面向开发者与编码 Agent 的仓库原生 SDLC 治理工具使用文档",
+  "description": "User documentation for SDLC Harness, a repository-native SDLC governance tool for developers and coding agents",
   "colors": {
     "primary": "#F59E0B",
     "light": "#FBBF24",
@@ -10,56 +10,118 @@
   },
   "favicon": "/favicon.ico",
   "navigation": {
-    "pages": [
+    "languages": [
       {
-        "group": "开始使用",
-        "pages": [
-          "index",
-          "concepts/why-sdlc-harness",
-          "quickstart",
-          "concepts/how-it-works",
-          "getting-started/generated-files",
-          "getting-started/agent-onboarding"
+        "language": "en",
+        "default": true,
+        "groups": [
+          {
+            "group": "Getting started",
+            "pages": [
+              "index",
+              "concepts/why-sdlc-harness",
+              "quickstart",
+              "concepts/how-it-works",
+              "getting-started/generated-files",
+              "getting-started/agent-onboarding"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/daily-workflow",
+              "guides/feature-lifecycle",
+              "guides/evidence-and-review",
+              "guides/traceability",
+              "guides/team-collaboration",
+              "guides/environment-and-session",
+              "guides/ci-and-github",
+              "guides/feedback-loop",
+              "guides/best-practices"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              "reference/review-results",
+              "reference/commands",
+              "reference/command-repository",
+              "reference/command-planning",
+              "reference/command-feature",
+              "reference/command-evidence",
+              "reference/command-claim",
+              "reference/command-workspace",
+              "reference/command-github",
+              "reference/command-environment",
+              "reference/command-feedback",
+              "reference/configuration",
+              "reference/feature-list",
+              "reference/status-and-traceability-output"
+            ]
+          },
+          {
+            "group": "Help",
+            "pages": [
+              "help/troubleshooting",
+              "help/faq"
+            ]
+          }
         ]
       },
       {
-        "group": "使用指南",
-        "pages": [
-          "guides/daily-workflow",
-          "guides/feature-lifecycle",
-          "guides/evidence-and-review",
-          "guides/traceability",
-          "guides/team-collaboration",
-          "guides/environment-and-session",
-          "guides/ci-and-github",
-          "guides/feedback-loop",
-          "guides/best-practices"
-        ]
-      },
-      {
-        "group": "参考",
-        "pages": [
-          "reference/review-results",
-          "reference/commands",
-          "reference/command-repository",
-          "reference/command-planning",
-          "reference/command-feature",
-          "reference/command-evidence",
-          "reference/command-claim",
-          "reference/command-workspace",
-          "reference/command-github",
-          "reference/command-environment",
-          "reference/command-feedback",
-          "reference/configuration",
-          "reference/feature-list",
-          "reference/status-and-traceability-output"
-        ]
-      },
-      {
-        "group": "帮助",
-        "pages": [
-          "help/troubleshooting",
-          "help/faq"
+        "language": "zh",
+        "groups": [
+          {
+            "group": "开始使用",
+            "pages": [
+              "zh/index",
+              "zh/concepts/why-sdlc-harness",
+              "zh/quickstart",
+              "zh/concepts/how-it-works",
+              "zh/getting-started/generated-files",
+              "zh/getting-started/agent-onboarding"
+            ]
+          },
+          {
+            "group": "使用指南",
+            "pages": [
+              "zh/guides/daily-workflow",
+              "zh/guides/feature-lifecycle",
+              "zh/guides/evidence-and-review",
+              "zh/guides/traceability",
+              "zh/guides/team-collaboration",
+              "zh/guides/environment-and-session",
+              "zh/guides/ci-and-github",
+              "zh/guides/feedback-loop",
+              "zh/guides/best-practices"
+            ]
+          },
+          {
+            "group": "参考",
+            "pages": [
+              "zh/reference/review-results",
+              "zh/reference/commands",
+              "zh/reference/command-repository",
+              "zh/reference/command-planning",
+              "zh/reference/command-feature",
+              "zh/reference/command-evidence",
+              "zh/reference/command-claim",
+              "zh/reference/command-workspace",
+              "zh/reference/command-github",
+              "zh/reference/command-environment",
+              "zh/reference/command-feedback",
+              "zh/reference/configuration",
+              "zh/reference/feature-list",
+              "zh/reference/status-and-traceability-output"
+            ]
+          },
+          {
+            "group": "帮助",
+            "pages": [
+              "zh/help/troubleshooting",
+              "zh/help/faq"
+            ]
+          }
         ]
       }
     ]

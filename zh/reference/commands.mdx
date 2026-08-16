@@ -1,0 +1,138 @@
+---
+title: "命令参考"
+description: "全部 SDLC Harness CLI 命令及其参数说明入口。"
+icon: "terminal"
+---
+
+所有命令都在目标仓库根目录运行。本文省略重复的 `npx @caesarlo/sdlc-harness` 前缀；未安装 CLI 时请加上该前缀。
+
+```bash
+npx @caesarlo/sdlc-harness --help
+```
+
+<CardGroup cols={2}>
+  <Card title="仓库与审核" icon="folder-check" href="/zh/reference/command-repository" cta="查看参数" arrow>
+    接入 Harness、审核仓库并读取状态与追溯矩阵。
+  </Card>
+  <Card title="规划" icon="list-check" href="/zh/reference/command-planning" cta="查看参数" arrow>
+    里程碑仅交互创建；功能可交互创建或从 JSON 导入。
+  </Card>
+  <Card title="功能生命周期" icon="diagram-project" href="/zh/reference/command-feature" cta="查看参数" arrow>
+    启动、完成、阻塞和重新打开功能。
+  </Card>
+  <Card title="验证与证据" icon="fingerprint" href="/zh/reference/command-evidence" cta="查看参数" arrow>
+    执行验证、记录评审、人工证据和 CI 证据。
+  </Card>
+  <Card title="Claim 与租约" icon="user-lock" href="/zh/reference/command-claim" cta="查看参数" arrow>
+    认领、续租、接管、推送和释放功能。
+  </Card>
+  <Card title="Workspace" icon="code-branch" href="/zh/reference/command-workspace" cta="查看参数" arrow>
+    创建和清理 Git worktree 隔离目录。
+  </Card>
+  <Card title="GitHub" icon="github" href="/zh/reference/command-github" cta="查看参数" arrow>
+    检查仓库保护配置。
+  </Card>
+  <Card title="环境与会话" icon="laptop-code" href="/zh/reference/command-environment" cta="查看参数" arrow>
+    检查项目环境并汇总会话结束状态。
+  </Card>
+  <Card title="反馈" icon="comment-dots" href="/zh/reference/command-feedback" cta="查看参数" arrow>
+    写入结构化反馈日志。
+  </Card>
+</CardGroup>
+
+## 仓库与审核
+
+| 命令 | 作用 | 参数说明 |
+| --- | --- | --- |
+| `init [--force]` | 生成完整协议；遇到已有文件默认停止并列出冲突 | [查看 `init` 参数 →](/zh/reference/command-repository#init) |
+| `adopt` | 只插入缺失文件；已有 `AGENTS.md` 时生成 sidecar | [查看 `adopt` 说明 →](/zh/reference/command-repository#adopt) |
+| `validate` | 运行全部治理审核；失败时返回非零 | [查看 `validate` 说明 →](/zh/reference/command-repository#validate) |
+| `status` | 输出功能、审批、追溯和下一步的 JSON 摘要 | [查看 `status` 说明 →](/zh/reference/command-repository#status) |
+| `traceability` | 输出完整追溯矩阵；存在实际缺口时返回非零 | [查看 `traceability` 说明 →](/zh/reference/command-repository#traceability) |
+
+## 规划
+
+| 命令 | 作用 | 参数说明 |
+| --- | --- | --- |
+| `new-feature [--input <path>]` | 交互创建功能，或从仓库内 JSON 文件导入 | [查看 `new-feature` 参数 →](/zh/reference/command-planning#new-feature) |
+| `new-milestone` | 交互创建里程碑 | [查看 `new-milestone` 说明 →](/zh/reference/command-planning#new-milestone) |
+
+## 功能生命周期
+
+| 命令 | 状态变化 | 参数说明 |
+| --- | --- | --- |
+| `feature start <feature-id>` | 检查 ready、依赖和 WIP，认领并进入 `in_progress` | [查看 `start` 参数 →](/zh/reference/command-feature#start) |
+| `feature complete <feature-id>` | 检查证据和独立 review，再进入 `passing` | [查看 `complete` 参数 →](/zh/reference/command-feature#complete) |
+| `feature block <feature-id>` | 记录 blocker、释放 claim 并进入 `blocked` | [查看 `block` 参数 →](/zh/reference/command-feature#block) |
+| `feature reopen <feature-id>` | 清除 blocker，从 `blocked` 返回 `not_started` | [查看 `reopen` 参数 →](/zh/reference/command-feature#reopen) |
+
+## 验证、评审与证据
+
+| 命令 | 作用 | 参数说明 |
+| --- | --- | --- |
+| `verify <feature-id>` | 真实执行自动验证并记录 test 证据 | [查看 `verify` 参数 →](/zh/reference/command-evidence#verify) |
+| `evidence manual <feature-id>` | 为 manual 验证项记录人工证据 | [查看 `evidence manual` 参数 →](/zh/reference/command-evidence#manual) |
+| `review record <feature-id>` | 为当前 commit 记录评审结论 | [查看 `review record` 参数 →](/zh/reference/command-evidence#review-record) |
+| `evidence approval <artifact>` | 记录与文件内容哈希绑定的项目级审批 | [查看 `evidence approval` 参数 →](/zh/reference/command-evidence#approval) |
+| `evidence import <feature-id>` | 验证并导入成功的 GitHub Actions run | [查看 `evidence import` 参数 →](/zh/reference/command-evidence#import) |
+
+## Claim 与租约
+
+| 命令 | 作用 | 参数说明 |
+| --- | --- | --- |
+| `claim <feature-id>` | 认领指定功能 | [查看 `claim` 参数 →](/zh/reference/command-claim#claim) |
+| `claim --next` | 按依赖、priority 和列表顺序选择 ready 功能 | [查看 `--next` 参数 →](/zh/reference/command-claim#next) |
+| `claim renew <feature-id>` | 从当前时间续租已有 claim | [查看 `renew` 参数 →](/zh/reference/command-claim#renew) |
+| `claim <feature-id> --takeover-expired` | 接管已过期 claim | [查看接管参数 →](/zh/reference/command-claim#takeover-expired) |
+| `claim <feature-id> --push` | 认领、提交并推送；远端冲突时尝试下一个功能 | [查看 `--push` 参数 →](/zh/reference/command-claim#push) |
+| `release <feature-id>` | 释放 claim，并把 `in_progress` 恢复为 `not_started` | [查看 `release` 参数 →](/zh/reference/command-claim#release) |
+
+<Note>
+  Solo 模式通常无需手动 claim；`verify` 会按需为 `defaultOwner` 临时认领并释放。Team 模式必须事先持有有效 claim。
+</Note>
+
+## Workspace
+
+| 命令 | 作用 | 参数说明 |
+| --- | --- | --- |
+| `workspace create <feature-id>` | 创建 `.worktrees/<id>` 和 `feature/<id>` 分支 | [查看 `create` 参数 →](/zh/reference/command-workspace#create) |
+| `workspace status` | 输出所有已登记 workspace | [查看 `status` 说明 →](/zh/reference/command-workspace#status) |
+| `workspace remove <feature-id>` | 安全移除单个 workspace | [查看 `remove` 参数 →](/zh/reference/command-workspace#remove) |
+| `workspace prune` | 清理 claim 已释放或过期的 workspace | [查看 `prune` 参数 →](/zh/reference/command-workspace#prune) |
+
+## GitHub provider
+
+| 命令 | 作用 | 参数说明 |
+| --- | --- | --- |
+| `provider github check` | 检查分支保护、review 和状态检查配置 | [查看 GitHub 参数 →](/zh/reference/command-github#check) |
+
+## 环境与会话
+
+| 命令 | 作用 | 参数说明 |
+| --- | --- | --- |
+| `env` | 列出已配置环境命令 | [查看 `env` 说明 →](/zh/reference/command-environment#env) |
+| `env check` | 依次运行 `bootstrap`、`verify`、`e2e`、`health` | [查看 `env check` 说明 →](/zh/reference/command-environment#env-check) |
+| `session close` | 汇总审核、环境、Git 和功能状态 | [查看 `session close` 说明 →](/zh/reference/command-environment#session-close) |
+
+## 反馈
+
+| 命令 | 作用 | 参数说明 |
+| --- | --- | --- |
+| `feedback log` | 在反馈日志顶部写入结构化条目 | [查看 `feedback log` 参数 →](/zh/reference/command-feedback#log) |
+
+## 通用默认值
+
+| 参数 | 默认值 |
+| --- | --- |
+| claim 和生命周期命令的 `--owner` | `harness.config.json.defaultOwner` |
+| `provider github check` 与 `evidence import` 的 GitHub 仓库 `--owner` | 从 `origin` 推断；无法推断时必须提供 |
+| `--ttl` | 120 分钟 |
+| `--remote` | `origin` |
+| `--branch` | `main` |
+| `--base` | `main` |
+
+`--actor` 的默认值因命令而异，具体以对应参数页为准。
+
+<Warning>
+  `init --force` 和 `workspace ... --force` 可能覆盖文件或丢弃未提交、未推送的工作。使用前先阅读对应参数页和命令输出。
+</Warning>

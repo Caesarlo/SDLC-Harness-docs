@@ -1,22 +1,22 @@
 ---
-title: "CI 与 GitHub"
-description: "在 Git hook、GitHub Actions 和跨机器协作中执行同一套门禁。"
+title: "CI and GitHub"
+description: "Apply the same gates in Git hooks, GitHub Actions, and cross-machine collaboration."
 icon: "github"
 ---
 
-## 本地提交门禁
+## Local commit gate
 
 ```bash
 git config core.hooksPath .githooks
 ```
 
-生成的 pre-commit hook 会运行 `validate`。每个 clone 需要单独配置一次。
+The generated pre-commit hook runs `validate`. Configure it once in each clone.
 
 ## GitHub Actions
 
-`init`/`adopt` 会生成 CI 和部署工作流。它们固定第三方 Action 的完整 commit SHA，并在真实项目检查或部署步骤未配置时失败关闭。接入后应把项目自己的安装、构建、测试和部署命令接进去。
+`init` and `adopt` generate CI and deployment workflows. They pin third-party Actions to full commit SHAs and fail closed when real project checks or deployment steps have not been configured. After integration, connect the project's own install, build, test, and deployment commands.
 
-为了让 `passing_is_monotonic` 在新 checkout 中也能发现状态倒退，CI 应获取足够 Git 历史，并提供基线：
+For `passing_is_monotonic` to detect a state regression in a fresh checkout, CI must fetch enough Git history and provide a resolvable Git baseline:
 
 ```yaml
 - uses: actions/checkout@<full-commit-sha>
@@ -28,49 +28,49 @@ git config core.hooksPath .githooks
 HARNESS_BASE_REF=origin/main npx @caesarlo/sdlc-harness validate
 ```
 
-[查看 `validate` 命令说明 →](/reference/command-repository#validate)
+[See the `validate` command →](/reference/command-repository#validate)
 
-GitHub Actions 的 `GITHUB_BASE_REF` 也会被识别。没有 Git 基线时，工具回退到本地成功审核快照；两者都不存在时不会制造误报。
+GitHub Actions also recognizes `GITHUB_BASE_REF`. Without a Git baseline, the tool falls back to the local successful validation snapshot. If neither exists, it does not report a false regression.
 
-## 仓库治理检查
+## Repository governance check
 
 ```bash
 npx @caesarlo/sdlc-harness provider github check
 ```
 
-[查看 `provider github check` 参数说明 →](/reference/command-github#check)
+[See the `provider github check` options →](/reference/command-github#check)
 
-该命令检查目标分支的 GitHub 配置。owner/repo 默认从 `origin` 推断，也可以显式传入：
+This command checks the GitHub configuration for the target branch. It infers `owner` and `repo` from `origin` by default, or you can provide them explicitly:
 
 ```bash
 npx @caesarlo/sdlc-harness provider github check \
   --owner acme --repo checkout --branch main
 ```
 
-[查看 owner、repo 和 branch 参数 →](/reference/command-github#check)
+[See the `owner`, `repo`, and `branch` options →](/reference/command-github#check)
 
-`PASS` 表示已确认符合要求，`FAIL` 表示已确认不符合，`UNKNOWN` 表示当前 token 缺少管理员权限，无法判断。它不会运行功能测试，也不会替代 `validate`。
+`PASS` means the configuration was confirmed to meet the requirements, `FAIL` means it was confirmed not to meet them, and `UNKNOWN` means the current token lacks administrator permissions, so the result cannot be determined. This command does not run feature tests and does not replace `validate`.
 
-## 导入 CI 证据
+## Import CI evidence
 
 ```bash
 npx @caesarlo/sdlc-harness evidence import M1-AUTH-001 --ci-run 123456
 ```
 
-[查看 `evidence import` 参数说明 →](/reference/command-evidence#import)
+[See the `evidence import` options →](/reference/command-evidence#import)
 
-导入前工具通过 `gh api` 验证 run 已完成且成功。需要显式仓库时添加 `--owner` 和 `--repo`。
+Before importing, the tool uses `gh api` to confirm that the run completed successfully. Add `--owner` and `--repo` when you need to specify the repository explicitly.
 
-## 跨机器 claim
+## Cross-machine claims
 
 ```bash
 npx @caesarlo/sdlc-harness claim M1-AUTH-001 --owner alice --push
 ```
 
-[查看 `claim --push` 参数说明 →](/reference/command-claim#push)
+[See the `claim --push` options →](/reference/command-claim#push)
 
-Git 不是实时锁：两台机器可能在本地同时认领。`--push` 会提交并推送 claim；如果远端抢先确认同一功能，工具会在同步后尝试认领下一个 ready 功能。可用 `--remote` 和 `--branch` 修改目标。
+Git is not a real-time lock: two machines can claim the same feature locally at the same time. `--push` commits and pushes the claim. If the remote has already confirmed a claim for the same feature, the tool synchronizes and then attempts to claim the next ready feature. Use `--remote` and `--branch` to change the target.
 
 <Warning>
-  不要把普通本地 claim 当作跨机器锁。团队跨设备协作时使用 `--push`，并在开始前同步远端状态。
+  Do not treat a regular local claim as a cross-machine lock. For cross-device collaboration, use `--push` and synchronize remote state before starting work.
 </Warning>

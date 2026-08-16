@@ -1,28 +1,28 @@
 ---
-title: "验证、评审与证据命令"
-description: "verify、review record 和 evidence 子命令的完整参数参考。"
+title: "Verification, review, and evidence commands"
+description: "Complete argument reference for verify, review record, and evidence subcommands."
 icon: "fingerprint"
 ---
 
-这些命令生成可审计证据。`verify` 执行验证命令，`review record` 记录评审结论，`evidence` 记录人工验证、制品审批或导入 CI 证据。
+These commands produce auditable evidence. `verify` executes verification commands, `review record` records a review conclusion, and `evidence` records manual verification, artifact approval, or imported CI evidence.
 
 ## `verify` {#verify}
 
-执行功能声明的全部自动验证命令并记录结果。
+Execute every automated verification command declared by a feature and record the results.
 
 ```bash
 npx @caesarlo/sdlc-harness verify <feature-id>
 ```
 
-| 参数 | 类型 | 必填 | 默认值 | 说明 |
+| Argument | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `<feature-id>` | string | 是 | — | 要验证的功能 ID。功能不能包含 `manual` 验证项。 |
+| `<feature-id>` | string | Yes | — | Feature ID to verify. The feature cannot contain `manual` verification items. |
 
-Team 模式要求功能已有有效 claim。Solo 模式在必要时为 `defaultOwner` 建立 30 分钟临时 claim，并在命令结束时释放。任一验证命令失败时仍会记录证据，但命令返回非零。
+Team mode requires the feature to have an active claim. In Solo mode, the command creates a temporary 30-minute claim for `defaultOwner` when necessary and releases it when the command ends. If any verification command fails, evidence is still recorded, but the command exits nonzero.
 
 ## `evidence manual` {#manual}
 
-为一个 `manual` 验证项记录人工证据。
+Record manual evidence for one `manual` verification item.
 
 ```bash
 npx @caesarlo/sdlc-harness evidence manual <feature-id> \
@@ -30,61 +30,61 @@ npx @caesarlo/sdlc-harness evidence manual <feature-id> \
   --notes <text> [--actor <id>]
 ```
 
-| 参数 | 类型 | 必填 | 默认值 | 说明 |
+| Argument | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `<feature-id>` | string | 是 | — | 必须处于 `in_progress` 的功能 ID。 |
-| `--verification` | integer | 是 | — | 从 `1` 开始的正整数序号，必须指向 `type: manual` 的验证项。 |
-| `--result` | enum | 是 | — | 仅允许 `passed` 或 `failed`。 |
-| `--notes` | string | 是 | — | 非空验证说明；含空格时使用引号。 |
-| `--actor` | string | 否 | `defaultOwner` | 执行人工验证的主体标识。 |
+| `<feature-id>` | string | Yes | — | ID of a feature that must be `in_progress`. |
+| `--verification` | integer | Yes | — | Positive, 1-based index that must point to a `type: manual` verification item. |
+| `--result` | enum | Yes | — | Accepts only `passed` or `failed`. |
+| `--notes` | string | Yes | — | Non-empty verification notes. Use quotes when they contain spaces. |
+| `--actor` | string | No | `defaultOwner` | Identifier of the actor performing manual verification. |
 
 ## `review record` {#review-record}
 
-为当前 commit 记录评审结论。
+Record a review conclusion for the current commit.
 
 ```bash
 npx @caesarlo/sdlc-harness review record <feature-id> \
   --reviewer <id> --summary <text> [--result <passed|failed>]
 ```
 
-| 参数 | 类型 | 必填 | 默认值 | 说明 |
+| Argument | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `<feature-id>` | string | 是 | — | 必须处于 `in_progress` 的功能 ID。 |
-| `--reviewer` | string | 是 | — | reviewer 标识；完成门禁要求它不同于 claim owner。 |
-| `--summary` | string | 是 | — | 非空评审摘要。 |
-| `--result` | enum | 否 | `passed` | 仅允许 `passed` 或 `failed`。 |
+| `<feature-id>` | string | Yes | — | ID of a feature that must be `in_progress`. |
+| `--reviewer` | string | Yes | — | Reviewer identifier. The completion gate requires it to differ from the claim owner. |
+| `--summary` | string | Yes | — | Non-empty review summary. |
+| `--result` | enum | No | `passed` | Accepts only `passed` or `failed`. |
 
 ## `evidence approval` {#approval}
 
-记录与当前文件内容哈希绑定的项目级审批。
+Record project-level approval bound to the hash of the current file content.
 
 ```bash
 npx @caesarlo/sdlc-harness evidence approval <artifact> \
   --actor <id> --summary <text>
 ```
 
-| 参数 | 类型 | 必填 | 默认值 | 说明 |
+| Argument | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `<artifact>` | path string | 是 | — | 仓库内现存文件。不能是 `feature_list.json`。 |
-| `--actor` | string | 是 | — | 审批主体标识，不能为空。 |
-| `--summary` | string | 是 | — | 非空审批依据或结论。 |
+| `<artifact>` | path string | Yes | — | Existing file in the repository. It cannot be `feature_list.json`. |
+| `--actor` | string | Yes | — | Non-empty identifier of the approving actor. |
+| `--summary` | string | Yes | — | Non-empty approval basis or conclusion. |
 
-文件内容改变后，原审批的内容哈希不再匹配，状态会显示为失效。
+After the file content changes, the original approval's content hash no longer matches and its status becomes invalid.
 
 ## `evidence import` {#import}
 
-验证并导入 GitHub Actions run 作为测试证据。
+Validate and import a GitHub Actions run as test evidence.
 
 ```bash
 npx @caesarlo/sdlc-harness evidence import <feature-id> \
   --ci-run <run-id> [--owner <github-owner>] [--repo <github-repo>]
 ```
 
-| 参数 | 类型 | 必填 | 默认值 | 说明 |
+| Argument | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `<feature-id>` | string | 是 | — | 接收 CI 证据的功能 ID。 |
-| `--ci-run` | string | 是 | — | GitHub Actions run ID。 |
-| `--owner` | string | 条件必填 | 从 `origin` 推断 | GitHub 仓库 owner。无法从 `origin` 推断时必须提供。 |
-| `--repo` | string | 条件必填 | 从 `origin` 推断 | GitHub 仓库名。无法从 `origin` 推断时必须提供。 |
+| `<feature-id>` | string | Yes | — | Feature ID that receives the CI evidence. |
+| `--ci-run` | string | Yes | — | GitHub Actions run ID. |
+| `--owner` | string | Conditionally | Inferred from `origin` | GitHub repository owner. Required when it cannot be inferred from `origin`. |
+| `--repo` | string | Conditionally | Inferred from `origin` | GitHub repository name. Required when it cannot be inferred from `origin`. |
 
-本机必须安装并认证 `gh` CLI，且 token 能读取目标 run。只有 `status=completed` 且 `conclusion=success` 的真实 run 才能导入。
+The `gh` CLI must be installed and authenticated locally, and its token must be able to read the target run. Only a real run with `status=completed` and `conclusion=success` can be imported.

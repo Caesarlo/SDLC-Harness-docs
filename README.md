@@ -1,6 +1,6 @@
-# SDLC Harness 中文文档
+# SDLC Harness 文档
 
-这是 [SDLC Harness](https://github.com/Caesarlo/sdlc-harness) 的中文用户文档站点，面向使用该工具的开发者和编码 Agent 用户。站点使用 Mintlify 和 MDX。
+这是 [SDLC Harness](https://github.com/Caesarlo/sdlc-harness) 的双语用户文档仓库，面向使用该工具的开发者和编码 Agent 用户。站点使用 Mintlify 和 MDX，默认语言为英文，简体中文页面位于 `/zh/` 路径下。
 
 ## 内容范围
 
@@ -10,7 +10,7 @@
 - 需求追溯、环境检查、会话收尾、CI/GitHub 和反馈闭环。
 - 全量命令、配置、`feature_list.json`、审核结论和故障排查参考。
 
-页面导航配置在 `docs.json`。用户文档使用简体中文；命令、路径、JSON 字段和字面状态值保持原始技术形式。
+页面导航配置在 `docs.json`。英文页面位于仓库根目录，对应的简体中文页面位于 `zh/`。命令、路径、JSON 字段和字面状态值保持原始技术形式。
 
 ## 本地预览
 
@@ -30,6 +30,8 @@ npx mint dev
 
 - 遵循根目录 `AGENTS.md` 的术语和内容边界。
 - 每个 `.mdx` 页面包含 YAML frontmatter。
+- 英文页面作为默认版本放在根目录，简体中文译文放在 `zh/` 的对应路径。
+- 新增或修改页面时，保持英文和简体中文内容及导航结构同步。
 - 示例优先使用可直接执行的 `npx @caesarlo/sdlc-harness ...`。
 - 明确区分 `verify`、`validate`、`feature complete` 和 `provider github check`。
 - 只记录当前 CLI 和仓库模板已经支持的用户行为。
@@ -37,4 +39,4 @@ npx mint dev
 
 ## 发布
 
-合并到文档仓库的发布分支后，由现有 Mintlify 站点配置构建和发布。
+合并到文档仓库的发布分支后，由现有 Mintlify 站点配置构建和发布。根路径发布默认英文站点，`/zh/` 发布简体中文站点；发布前应确认两种语言的页面清单一致且链接有效。

@@ -1,0 +1,148 @@
+---
+title: "故障排查"
+description: "按安装、生命周期、证据、追溯、workspace、CI 和环境场景定位问题。"
+icon: "screwdriver-wrench"
+---
+
+## 命令找不到或 Node.js 版本错误
+
+确认 Node.js 版本至少为 22：
+
+```bash
+node --version
+npx @caesarlo/sdlc-harness --help
+```
+
+直接运行 `sdlc-harness` 需要已安装 CLI；未安装时使用完整 npx 包名。
+
+## `init` 报告文件冲突
+
+已有仓库优先运行 `adopt`。只有确认可以覆盖列出的文件时才用 `init --force`。命令会先计算全部冲突，不会留下半初始化骨架。
+
+## `adopt` 跳过已有文件
+
+这是预期行为。它绝不覆盖已有文件。逐项检查跳过列表；需要合并 harness 内容时手工合并，而不是重复运行并期待覆盖。
+
+## `[agents-onboarding]` 失败
+
+仓库原本有 `AGENTS.md`，所以 adopt 写入了 `AGENTS.sdlc-harness.md`。在原 `AGENTS.md` 中加入明确引用，让新 Agent 会话能发现 sidecar。
+
+## 功能无法开始或认领
+
+```bash
+npx @caesarlo/sdlc-harness status
+```
+
+[查看 `status` 命令说明 →](/zh/reference/command-repository#status)
+
+检查功能是否为 `not_started`、依赖是否全部 `passing`、是否存在活跃 claim，以及 owner 是否达到 WIP 上限。`claim --next` 只从 ready 功能中选择。
+
+## claim 已过期
+
+原 owner 可续租；其他 owner 只能显式接管过期 claim：
+
+```bash
+npx @caesarlo/sdlc-harness claim <feature-id> --takeover-expired --owner bob
+```
+
+[查看过期接管参数说明 →](/zh/reference/command-claim#takeover-expired)
+
+活跃 claim 不能接管。若原工作仍在进行，应由原 owner `claim renew`。
+
+## Team 模式下 `verify` 拒绝运行
+
+Team 模式不会自动 claim：
+
+```bash
+npx @caesarlo/sdlc-harness claim <feature-id> --owner alice
+npx @caesarlo/sdlc-harness verify <feature-id>
+```
+
+参数说明：[认领功能](/zh/reference/command-claim#claim) · [执行验证](/zh/reference/command-evidence#verify)
+
+Solo 模式也会拒绝与其他 owner 的活跃 claim 竞争。
+
+## manual verification 无法执行
+
+`verify` 不会把人工描述当作 shell 命令。使用：
+
+```bash
+npx @caesarlo/sdlc-harness evidence manual <feature-id> \
+  --verification 1 --result passed --notes "实际环境和观察结果"
+```
+
+[查看 `evidence manual` 参数说明 →](/zh/reference/command-evidence#manual)
+
+## `verify` 通过但 `feature complete` 失败
+
+检查以下条件：
+
+- 当前 owner 仍持有有效 claim。
+- 所有依赖已 `passing`。
+- 每个 verification 都有当前 commit 的通过证据。
+- 存在晚于最新验证的通过 review。
+- reviewer 与 claim owner 不同。
+
+修改代码后旧 commit 的验证不能证明新代码；重新 `verify`，再重新 review。
+
+## `[pass-gate]` 或 passing 回退
+
+不要直接把旧功能从 `passing` 改回其他状态。为回归或新需求创建新功能。CI 应获取足够 Git 历史，并设置 `HARNESS_BASE_REF` 或提供 `GITHUB_BASE_REF`。
+
+## `[stage-gate]` 或 `[traceability]` 失败
+
+```bash
+npx @caesarlo/sdlc-harness traceability
+```
+
+[查看 `traceability` 命令说明 →](/zh/reference/command-repository#traceability)
+
+使用仓库内实际存在的文件路径和稳定 ID，例如：
+
+```json
+"source_refs": ["docs/product/requirements.md#FR-1"]
+```
+
+同时检查 requirement、story、AC、feature 和 verification 的完整链，不要只让文件路径存在。
+
+## 制品审批失效
+
+审批绑定内容哈希。文件修改后需要确认新内容并重新执行：
+
+```bash
+npx @caesarlo/sdlc-harness evidence approval <artifact> \
+  --actor <id> --summary <text>
+```
+
+[查看 `evidence approval` 参数说明 →](/zh/reference/command-evidence#approval)
+
+## workspace 无法移除或 prune 跳过
+
+工具会保护未提交或未推送工作，并跳过活跃 claim 的 workspace。先提交、推送或释放 claim。只有明确接受丢失内容时才使用 `--force`。
+
+## GitHub 检查显示 `UNKNOWN`
+
+当前 `gh` token 缺少读取管理员配置的权限。UNKNOWN 是无法确认，不是失败，也不是通过。使用权限足够的 token 重新检查。
+
+## CI 证据无法导入
+
+确认 run ID 属于目标仓库、已经 completed 且 conclusion 为 success。无法从 `origin` 推断仓库时显式传入 `--owner` 和 `--repo`。
+
+## `env check` 失败
+
+```bash
+npx @caesarlo/sdlc-harness env
+```
+
+[查看 `env` 命令说明 →](/zh/reference/command-environment#env)
+
+复制失败的实际命令在仓库根目录单独运行。检查依赖、环境变量和服务前置条件。`env check` 在第一项失败后停止，因此修复后需重新运行以发现后续问题。
+
+## `session close` 返回非零
+
+它表示 `validate` 或已配置环境命令失败。未提交文件只会被报告，不会单独导致非零。向上查看具体 `[validator]` 或 env FAIL 行。
+
+## feedback log 审核失败
+
+优先用 `feedback log` 写入规范条目。severity 只能为 S1-S4，disposition 只能为四个允许值；Deferred 和 Declined 必须解释原因。
+

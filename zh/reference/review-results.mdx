@@ -1,0 +1,106 @@
+---
+title: "审核与结论"
+description: "区分功能验证、仓库审核和 GitHub 检查，并修复每类 validate 错误。"
+icon: "clipboard-check"
+---
+
+## 三种结论不要混淆
+
+| 命令 | 回答的问题 | 是否执行功能测试 |
+| --- | --- | --- |
+| `verify <feature-id>` | 该功能声明的命令是否真实通过？ | 是 |
+| `validate` | 当前仓库状态、证据和追溯是否符合合同？ | 否 |
+| `provider github check` | GitHub 目标分支治理配置是否符合要求？ | 否 |
+
+功能完成还需要 `review record` 和 `feature complete`，不能只凭其中一个结论。
+
+## `verify` 输出
+
+```text
+[PASS] npm test -- auth (exit 0)
+All verification commands passed for M1-AUTH-001.
+```
+
+任一命令失败时返回非零并记录 failed 证据。manual verification 必须改用 `evidence manual`。
+
+## `validate` 输出
+
+```text
+All checks passed.
+```
+
+失败示例：
+
+```text
+FAILED with 1 error(s):
+  - [pass-gate] Feature M1-AUTH-001 is passing but has no passing review evidence
+```
+
+方括号中的名称表示负责检查的审核器。
+
+## 审核器分类
+
+### `[schema]`
+
+检查 JSON Schema：字段类型、必填字段、状态枚举、manual/automated 类型等。先修复结构，其他审核器才有可靠输入。
+
+### `[structural]`
+
+检查顶层字段、非空功能列表、唯一 ID、已知里程碑和至少一个 verification。不要用复制 ID 或空 verification 暂时占位。
+
+### `[dependency-cycles]`
+
+检查未知依赖和依赖环。错误会显示环路，例如 `A -> B -> A`；重新拆分或调整依赖方向。
+
+### `[dependency-readiness]`
+
+`in_progress` 功能的每个依赖都必须已经 `passing`。先完成依赖，或阻塞并重新排期当前功能。
+
+### `[milestone-order]`
+
+较早里程碑不能依赖较晚里程碑中的功能。调整里程碑顺序或依赖归属。
+
+### `[stage-gate]`
+
+真实功能必须有能解析到仓库内文件的 `source_refs`。使用需求、验收标准或 ADR 的稳定路径和 ID。
+
+### `[pass-gate]`
+
+检查每个 owner 的 WIP 上限、placeholder 不得 passing、全部 verification 的通过证据、独立 review 和 passing 单调性。优先用生命周期命令修复，不要手改状态。
+
+### `[adr-coverage]`
+
+`requiredAdrTopics` 中每个 topic 都要由 `docs/adr/` 中相同 frontmatter topic 覆盖。
+
+### `[agents-onboarding]`
+
+仓库已有 `AGENTS.md` 且 adopt 生成 sidecar 时，根协议必须明确引用 `AGENTS.sdlc-harness.md`。
+
+### `[feedback-log]`
+
+当 observability 不为 `none` 时，检查反馈条目的日期、来源、观察、S1-S4 严重级别和处理结论；Deferred/Declined 还需要原因。
+
+### `[artifact-approval]`
+
+制品不存在或内容哈希与审批时不同会使审批失效。确认新内容后重新运行 `evidence approval`。
+
+### `[traceability]`
+
+检查未覆盖需求、孤立故事/功能、未覆盖或未验证验收标准。使用 `traceability` 查看完整矩阵。
+
+## Git 基线
+
+passing 单调性优先与 `HARNESS_BASE_REF`、`GITHUB_BASE_REF`、`origin/main` 或 `main` 的 Git 历史比较；无可用历史时回退到本地成功审核快照。CI 应使用完整历史或显式基线。
+
+## GitHub 结论
+
+`provider github check` 输出 `PASS`、`FAIL`、`UNKNOWN`。UNKNOWN 表示当前 token 无权读取某项管理员配置，是降级警告，不应写成“检查已通过”。
+
+## 推荐排错顺序
+
+1. `[schema]`、`[structural]`。
+2. 依赖环、里程碑顺序和 readiness。
+3. source_refs、ADR 和 traceability。
+4. WIP、verification、review 和 approval。
+5. 重新运行 `validate`，不要删除错误状态来隐藏问题。
+

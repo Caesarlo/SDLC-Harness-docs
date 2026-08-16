@@ -1,120 +1,120 @@
 ---
-title: "为什么需要它"
-description: "编码 Agent 协作中真实发生的失效模式，以及 SDLC Harness 每个机制具体解决了什么。"
+title: "Why SDLC Harness"
+description: "Real failure modes in coding-agent collaboration and the specific mechanisms SDLC Harness uses to address them."
 icon: "circle-question"
 ---
 
-这一页回答一个更根本的问题：**如果没有 SDLC Harness，问题具体出在哪里？** 每一节都先描述一种真实会发生的失效模式，再说明对应的机制如何让它变得不可能发生，而不是靠约定或提醒来避免。
+This page answers a more fundamental question: **What specifically goes wrong without SDLC Harness?** Each section begins with a failure mode that occurs in real work, then explains how the corresponding mechanism reduces, detects, or blocks it.
 
-## 失效模式一：进度只存在于对话里
+## Failure mode 1: progress exists only in conversation
 
-编码 Agent 的会话是有边界的。一次对话结束、上下文被压缩，或者换了一个 Agent 继续同一个任务，"为什么改这个"、"改到哪一步了"、"还差什么"这些信息如果只存在于聊天记录里，就会随会话一起消失。下一个接手的人或 Agent 只能重新读代码、猜测意图，或者干脆重做一遍已经做过的分析。
+Coding-agent sessions have boundaries. When a conversation ends, context is compacted, or a different agent continues the same task, information such as why a change was made, how far the work progressed, and what remains disappears if it exists only in chat history. The next person or agent must reread the code, infer the intent, or repeat analysis that was already done.
 
 ```mermaid placement="top-right" actions={true}
 %%{init: {"flowchart": {"curve": "basis"}, "theme": "base", "themeVariables": {"fontFamily": "Inter, ui-sans-serif, system-ui, sans-serif", "primaryColor": "#FEF2F2", "primaryBorderColor": "#EF4444", "primaryTextColor": "#7F1D1D", "lineColor": "#EF4444", "tertiaryColor": "#FFF7ED"}}}%%
 flowchart LR
-  subgraph 没有仓库原生状态
+  subgraph No repository-native state
     direction LR
-    C1["会话 1：设计并实现"] -. 聊天记录里的意图 .-> C2["会话 2：不知道为什么这么写"]
-    C2 -. 不确定是否测试过 .-> C3["会话 3：重新验证或跳过验证"]
+    C1["Session 1: design and implement"] -. Intent trapped in chat history .-> C2["Session 2: does not know why it was written this way"]
+    C2 -. Uncertain whether it was tested .-> C3["Session 3: reverify or skip verification"]
   end
   classDef risk fill:#FEF2F2,stroke:#EF4444,color:#7F1D1D,stroke-width:2px
   class C1,C2,C3 risk
 ```
 
-SDLC Harness 把"为什么改、做到哪、验证过没有"直接写进仓库：`feature_list.json` 记录状态、依赖和证据，`source_refs` 把功能绑定回需求或 ADR 原文，`progress.md` 保留跨会话检查点。新会话不需要读懂整段历史，只需要读 `AGENTS.md` 规定的几个文件。
+SDLC Harness writes the reason for a change, current progress, and verification state directly into the repository. `feature_list.json` records state, dependencies, and evidence; `source_refs` links a feature back to the original requirement or ADR; and `progress.md` preserves cross-session checkpoints. A new session does not need the full conversation history. It only needs the files specified by `AGENTS.md`.
 
-## 失效模式二："完成"只是一句自我声明
+## Failure mode 2: “done” is only a self-reported claim
 
-Agent（以及人）都倾向于报告"已完成""测试通过"，但这句话本身不能证明什么。如果完成状态只是一个自然语言描述，验收就退化成"相信对方说的话"。
+Agents and people both tend to report that work is complete or tests passed, but the statement alone proves nothing. When completion is only a natural-language description, acceptance becomes a matter of trusting the report.
 
-SDLC Harness 不接受这种声明式的完成。`sdlc-harness verify <feature-id>` 实际执行功能声明的验证命令,把命令、退出码、时间戳和当前 commit SHA 一起写成证据;没有人可以手写一条"通过了"的记录来冒充真实验证。`validate` 的 `[pass-gate]` 检查更进一步:一个 `passing` 功能必须同时具备验证证据和一条独立的 `kind: "review"` 证据——测试通过不能替代评审,评审也不能替代真实运行过的测试。
+SDLC Harness does not accept declarative completion. `sdlc-harness verify <feature-id>` executes the verification commands declared by the feature and writes the command, exit code, timestamp, and current commit SHA as evidence. A handwritten “passed” record cannot stand in for actual command execution. The `[pass-gate]` check in `validate` goes further: a `passing` feature must have both verification evidence and an independent `kind: "review"` evidence record. Passing tests do not replace review, and review does not replace actually running the tests.
 
 <Note>
-  这两类证据分别回答"命令是否真的跑过并成功"和"是否有人按验收标准检查过实现"，两个问题互相不能替代。
+  These two evidence types answer different questions: “Did the command actually run and succeed?” and “Did someone inspect the implementation against the acceptance criteria?” Neither can replace the other.
 </Note>
 
-## 失效模式三：完成状态会悄悄倒退
+## Failure mode 3: completed state silently regresses
 
-一个功能今天标记为 `passing`，不代表它永远保持这个状态——后续改动可能在不经意间破坏它，而没有人注意到状态字段本身被改回了 `in_progress` 或者干脆被删除。如果校验只看当前这一份文件，这种倒退是看不出来的。
+A feature marked `passing` today does not remain safe forever. A later change can break it without anyone noticing that its state was changed back to `in_progress` or removed. A check that sees only the current file cannot detect this regression.
 
-`validate` 的单调检查（`passing_is_monotonic`）会把当前状态和一个 Git 基线做比较：优先使用 `HARNESS_BASE_REF`/`GITHUB_BASE_REF` 或 `origin/main`/`main`，本地没有基线时才退回本地快照。这意味着即便是一次全新的 CI checkout，也能发现"之前通过的功能现在不再通过"这类回归，而不依赖某台机器本地缓存的历史记录。
+The monotonicity check in `validate` (`passing_is_monotonic`) compares the current state with a Git baseline. It prefers `HARNESS_BASE_REF`/`GITHUB_BASE_REF` or `origin/main`/`main`, and falls back to a local snapshot only when no baseline is available. In a fresh CI checkout, this check can detect that a previously passing feature no longer passes only when CI fetches a resolvable baseline and sets `HARNESS_BASE_REF` or `GITHUB_BASE_REF`; see [CI and GitHub integration](/guides/ci-and-github). It does not rely on history cached on one developer machine.
 
-## 失效模式四：测试是实现者自己写的
+## Failure mode 4: the implementer also writes the tests
 
-让写实现的人（或 Agent）也写测试，天然存在动机问题：断言可能被悄悄放宽，边界情况可能被跳过，测试可能只验证了"代码没有报错"而不是"行为符合预期"。这不是不诚实，而是同一个视角很难同时扮演裁判和选手。
+When the same person or agent writes both the implementation and its tests, the incentives are inherently misaligned. Assertions may be relaxed, edge cases may be skipped, or tests may verify only that the code does not crash rather than that the behavior is correct. This is not necessarily dishonesty; one perspective has difficulty acting as both competitor and referee.
 
-默认的 `testStrategy: "isolated-tdd"` 把这两个角色物理分开：一个子 Agent 只根据功能的 `behavior`、`verification`、`source_refs` 写失败测试，不知道任何实现方案；控制会话确认测试先以预期原因失败（RED），并对测试文件做快照；另一个子 Agent 只拿到测试文件路径去实现，不接触第一个 Agent 的思路记录，也不能修改断言。控制会话在测试转绿后会把测试文件与快照比对，一旦发现被改动就拒绝这次实现。
+The default `testStrategy: "isolated-tdd"` physically separates the roles. One subagent receives only the feature's `behavior`, `verification`, and `source_refs`, and writes failing tests without seeing an implementation plan. The controlling session confirms that the tests first fail for the expected reason (RED) and snapshots the test files. A second subagent receives only the test-file paths and implements the behavior without access to the first agent's reasoning or permission to change the assertions. After the tests turn green, the controlling session compares the test files with the snapshot and rejects the implementation if they changed.
 
 ```mermaid placement="top-right" actions={true}
 %%{init: {"theme": "base", "themeVariables": {"fontFamily": "Inter, ui-sans-serif, system-ui, sans-serif", "primaryColor": "#FFF7ED", "primaryBorderColor": "#F59E0B", "primaryTextColor": "#451A03", "lineColor": "#D97706", "actorBkg": "#FFF7ED", "actorBorder": "#F59E0B", "actorTextColor": "#451A03", "signalColor": "#D97706", "signalTextColor": "#451A03", "noteBkgColor": "#FFFBEB", "noteBorderColor": "#F59E0B", "noteTextColor": "#451A03", "activationBkgColor": "#ECFDF5", "activationBorderColor": "#10B981"}}}%%
 sequenceDiagram
-  participant Ctrl as 控制会话
-  participant Writer as 测试子 Agent
-  participant Impl as 实现子 Agent
+  participant Ctrl as Controlling session
+  participant Writer as Test-writing subagent
+  participant Impl as Implementation subagent
 
-  Ctrl->>Writer: 只给 behavior / verification / source_refs
-  Writer-->>Ctrl: 失败测试文件路径
-  Ctrl->>Ctrl: 运行测试，确认 RED（原因正确）
-  Ctrl->>Ctrl: 记录测试文件快照
-  Ctrl->>Impl: 只给测试文件路径 + behavior
-  Impl-->>Ctrl: 实现代码
-  Ctrl->>Ctrl: 对比测试文件与快照
-  alt 测试被改动
-    Ctrl-->>Impl: 拒绝，重新派发
-  else 测试未被改动
-    Ctrl->>Ctrl: 运行测试确认 GREEN，再跑完整 verification
+  Ctrl->>Writer: Provide only behavior / verification / source_refs
+  Writer-->>Ctrl: Failing test-file paths
+  Ctrl->>Ctrl: Run tests and confirm RED for the expected reason
+  Ctrl->>Ctrl: Snapshot the test files
+  Ctrl->>Impl: Provide only test-file paths + behavior
+  Impl-->>Ctrl: Implementation code
+  Ctrl->>Ctrl: Compare test files with the snapshot
+  alt Tests changed
+    Ctrl-->>Impl: Reject and dispatch again
+  else Tests unchanged
+    Ctrl->>Ctrl: Run tests to confirm GREEN, then run full verification
   end
 ```
 
-规模明显小的功能（无分支逻辑、无外部依赖）可以跳过子 Agent 拆分、在同一会话内完成，但重构步骤和 review 门禁在所有 `testStrategy` 下都不能省略。
+Clearly small features with no branching logic or external dependencies can skip the subagent split and stay within one session. The refactoring step and review gate remain required under every `testStrategy`.
 
-## 失效模式五：多个 Agent 同时认领同一件事
+## Failure mode 5: multiple agents claim the same work
 
-并行运行多个 Agent 是提升吞吐量的直接办法，但没有协调机制时，两个 Agent 很容易挑中同一个"看起来可以做"的功能，各自实现一遍，最后要人工合并冲突、丢弃重复工作。
+Running multiple agents in parallel directly increases throughput, but without coordination, two agents can select the same apparently available feature, implement it twice, and leave someone to merge conflicts or discard duplicate work.
 
-SDLC Harness 用 claim + 租约把"认领"变成一个原子操作：`claim --next` 只会选中 `not_started`、依赖全部 `passing`、且没有被有效 claim 占用的功能；`wip_limit_per_owner` 限制单个 owner 能同时打开的功能数，默认为 1，避免开了很多头却都没做完。Git 本身没有实时跨机器锁，所以两台机器仍可能在本地同时认领同一功能——`claim --push` 用"提交并推送，推送被拒就丢弃本地 claim、重新同步、自动改认领下一个就绪功能"这套流程，把冲突检测推迟到真正会发生冲突的那一刻（push），而不是假装可以提前用锁避免它。独立的 `workspace create` 再给每个 claim 一个隔离的 worktree 和分支，让并行的多个 Agent 不会在同一份工作树上互相踩踏。
+SDLC Harness uses a `claim` and lease to make claiming atomic. `claim --next` selects only a `not_started` feature whose dependencies are all `passing` and which has no active `claim`. `wip_limit_per_owner`, which defaults to 1, limits how many features one `owner` can open at once and discourages starting work without finishing it. Git does not provide a real-time cross-machine lock, so two machines can still claim the same feature locally. `claim --push` defers conflict detection until the push: it commits and pushes the `claim`; if the push is rejected, it discards the local `claim`, synchronizes, and automatically claims the next ready feature. This detects the conflict at the moment it becomes real instead of pretending a prior lock can prevent it. A separate `workspace create` gives each `claim` an isolated `worktree` and branch so parallel agents do not overwrite one another in a shared working tree.
 
-## 失效模式六：规则只存在于文档里，没人真正执行
+## Failure mode 6: rules exist only in documentation
 
-"提交前必须跑测试""完成需要评审"这类规则,如果只写在贡献指南里,执行力取决于每个人有没有记住、愿不愿意照做。人可能会忘,Agent 更可能在长会话里丢失这条约束。
+Rules such as “run tests before committing” and “completion requires review” are only as reliable as people's memory when they exist solely in a contribution guide. People can forget, and agents are even more likely to lose the constraint during a long session.
 
-`sdlc-harness validate` 把这些规则变成一个会返回非零退出码的命令，本地 `.githooks/pre-commit` 和生成的 CI 模板运行的是完全相同的检查逻辑——本地能提交的状态，在 CI 里也一定能通过；本地被拦下的问题，不会指望靠 code review 才发现。规则从"写在文档里希望大家记得"变成"不满足就无法推进"。
+`sdlc-harness validate` turns those rules into a command with a nonzero exit code on failure. When the local `.githooks/pre-commit` hook and generated CI workflow are enabled, they execute the same audit logic. A noncompliant state then returns a nonzero exit code and can block a commit or merge. Local and CI results can still differ when their checked-out history, baseline refs, configuration, or environment differ.
 
-## 跟不用这套机制相比，实际差在哪
+## What changes in practice
 
-这些机制不是全新发明，而是把几种已经在工程实践里被验证有效的思路，落到"编码 Agent 协作"这个具体场景里：状态该放哪、完成该怎么证明、并发该怎么协调、回归该怎么发现。下面是同一件事在"没有仓库原生治理"和"有 SDLC Harness"下的实际差异：
+These mechanisms are not entirely new inventions. They apply established engineering practices to coding-agent collaboration: where state belongs, how completion is demonstrated, how concurrency is coordinated, and how regressions are detected. The table shows the practical difference between working without repository-native governance and working with SDLC Harness.
 
-| 环节 | 没有这套机制时的实际做法 | SDLC Harness 下的做法 |
+| Stage | Without these mechanisms | With SDLC Harness |
 | --- | --- | --- |
-| 当前状态存在哪 | 聊天记录、Issue 描述、开发者脑子里，三者经常不一致 | `feature_list.json` 是唯一状态源，任何会话都能读到同一份 |
-| "完成"怎么证明 | 一句"测试通过了"或"应该没问题" | 一条包含命令、退出码、时间戳、commit SHA 的证据记录，加一条独立的评审记录 |
-| 本地和 CI 是否一致 | 本地跑一遍，CI 再跑一遍，规则可能悄悄不同步 | 本地 Git hook 和 CI 执行同一套 `validate` 逻辑，没有"本地绿但 CI 未必绿"的缝隙 |
-| 回归怎么发现 | 依赖有人记得、有人恰好翻到旧记录 | 每次 `validate` 都用 Git 历史比对基线，全新 checkout 也能查出来 |
-| 多个 Agent/开发者抢同一件事 | 靠口头协调或事后合并冲突 | claim 把"认领"变成一次原子操作，冲突在 push 那一刻被检测并自动改派，而不是靠提前加锁 |
-| 谁写代码谁写测试 | 同一视角既当选手又当裁判，断言容易被悄悄放松 | 默认拆成两个互不知情的角色，测试文件在实现阶段被快照比对，防止事后被改松 |
+| Where current state lives | Chat history, issue descriptions, and developers' heads, which often disagree | `feature_list.json` is the single source of truth that every session reads |
+| How “done” is demonstrated | A statement that tests passed or the change should work | An evidence record with command, exit code, timestamp, and commit SHA, plus an independent review record |
+| Whether local and CI rules match | Local and CI checks run separately and can drift | The local Git hook and CI run the same `validate` logic |
+| How regressions are detected | Someone must remember or happen to find an old record | `validate` compares against a resolvable Git baseline; a fresh CI checkout must fetch it and set `HARNESS_BASE_REF` or `GITHUB_BASE_REF` |
+| How agents or developers avoid claiming the same task | Verbal coordination or conflict resolution afterward | A `claim` makes selection atomic; conflicts are detected at push time and work is reassigned automatically instead of relying on an early lock |
+| Whether the implementer writes the tests | One perspective acts as both competitor and referee, making assertions easier to relax | The default strategy separates two agents that do not share implementation reasoning and snapshots test files to prevent later weakening |
 
-这几条分别对应几种在软件工程里已经被反复验证的做法：把可变更的运行状态收敛到一个声明式的、可重放的位置，而不是分散在多处容易漂移的地方；完成条件要能被自动检查，而不是停留在人工确认；变更引入的证据要能追溯到具体的命令和产物，而不是一句转述；并发协调优先假设"大概率不冲突"，在真正提交的那一刻才做代价最高的检查，而不是一开始就上重量级的锁。SDLC Harness 把这几件事都收进同一个仓库、同一套退出码里，不需要额外部署协调服务，也不需要团队成员都记住同一套约定。
+These differences reflect several well-established software-engineering practices: consolidate mutable runtime state in a declarative, replayable location instead of scattering it across sources that drift; make completion conditions machine-checkable instead of relying only on human confirmation; trace evidence to specific commands and artifacts instead of accepting a retelling; and use optimistic concurrency by performing the most expensive conflict check when a change is actually submitted rather than acquiring a heavyweight lock at the start. SDLC Harness brings these practices into one repository and one set of exit codes, without requiring a separate coordination service or depending on every team member to remember the same conventions.
 
-## 这些机制加在一起解决什么
+## What the mechanisms solve together
 
-单独看，claim、证据、单调检查、隔离 TDD 都是很局部的机制。放在一起，它们把"Agent 协作是否可信"这个问题从"相信对方的自我报告"变成"仓库里有没有可验证的记录"：
+Individually, `claim`, evidence, monotonicity checks, and isolated TDD are narrow mechanisms. Together, they turn trust in agent collaboration from self-reporting into a question that can be answered from verifiable repository records.
 
 <CardGroup cols={2}>
-  <Card title="状态可恢复" icon="rotate">
-    任何时刻中断，下一个会话都能从仓库读回完整上下文，不依赖聊天记录。
+  <Card title="Recoverable state" icon="rotate">
+    After an interruption, the next session can recover the complete context from the repository without relying on chat history.
   </Card>
-  <Card title="完成不可伪造" icon="fingerprint">
-    "passing" 背后必须有真实运行过的验证命令和独立的评审记录。
+  <Card title="Evidence-backed completion" icon="fingerprint">
+    A `passing` feature must be backed by verification commands that actually ran and an independent review record.
   </Card>
-  <Card title="回归不可隐藏" icon="arrow-trend-down">
-    Git 基线比较让状态倒退在全新 checkout 里也能被发现。
+  <Card title="Visible regressions" icon="arrow-trend-down">
+    Git baseline comparison can detect `status` regression in a [fresh CI checkout](/guides/ci-and-github) when CI fetches a resolvable baseline and sets `HARNESS_BASE_REF` or `GITHUB_BASE_REF`.
   </Card>
-  <Card title="规则不可绕过" icon="gavel">
-    同一套检查在本地 hook 和 CI 中都会执行，退出码而不是人的记忆在把关。
+  <Card title="Executable rules" icon="gavel">
+    When local hooks and CI are enabled, the same audit returns a nonzero exit code for noncompliant state and can block a commit or merge.
   </Card>
 </CardGroup>
 
-<Card title="看它具体怎么运作" icon="diagram-project" href="/concepts/how-it-works">
-  了解仓库状态、功能生命周期和九阶段工作流的具体机制。
+<Card title="See how it works" icon="diagram-project" href="/concepts/how-it-works">
+  Explore the repository state, feature lifecycle, and nine-stage workflow in detail.
 </Card>

@@ -1,0 +1,125 @@
+---
+title: "配置参考"
+description: "配置协作、测试策略、阶段适用性、环境命令和 feature list 规则。"
+icon: "sliders"
+---
+
+## `harness.config.json`
+
+生成模板如下：
+
+```json
+{
+  "projectName": "your-project",
+  "requiredAdrTopics": [],
+  "testStrategy": "isolated-tdd",
+  "defaultOwner": "agent",
+  "collaborationMode": "solo",
+  "deploymentMode": "required",
+  "observabilityMode": "feedback-only",
+  "commands": {
+    "bootstrap": "",
+    "verify": "",
+    "health": ""
+  }
+}
+```
+
+缺少配置文件时也会使用相同默认语义，`projectName` 默认为 `"unnamed-project"`，commands 为空。
+
+## 字段
+
+| 字段 | 默认值 | 允许值或作用 |
+| --- | --- | --- |
+| `projectName` | `"unnamed-project"` | 项目显示名称 |
+| `requiredAdrTopics` | `[]` | 必须由 `docs/adr/` frontmatter 覆盖的 topic |
+| `testStrategy` | `"isolated-tdd"` | `isolated-tdd`、`in-session-tdd`、`team-default` |
+| `defaultOwner` | `"agent"` | 未传 `--owner` 时使用 |
+| `collaborationMode` | `"solo"` | `solo` 或 `team` |
+| `deploymentMode` | `"required"` | `required`、`optional`、`none` |
+| `observabilityMode` | `"feedback-only"` | `runtime`、`feedback-only`、`none` |
+| `commands` | `{}` | 项目级环境命令，见下文 |
+
+未知枚举值或未知 commands 键会直接报错，避免拼写错误被静默忽略。
+
+## 测试策略
+
+| 值 | 工作流含义 |
+| --- | --- |
+| `isolated-tdd` | 默认；非简单功能使用测试编写者和实现者隔离的 TDD 流程 |
+| `in-session-tdd` | 同一会话完成 RED、GREEN 和重构 |
+| `team-default` | 遵循项目贡献文档或已有 CI 规范 |
+
+这是 `docs/workflow/06-agile-tdd.md` 的流程开关，不代表 `validate` 能判断测试设计质量。
+
+## 协作模式
+
+`solo` 隐藏 claim 操作负担：`verify` 需要时为 `defaultOwner` 临时认领并在结束后释放。若他人仍持有活跃 claim，它仍会拒绝竞争写入。
+
+`team` 要求调用者在验证前显式持有有效 claim，适合多人、多 Agent 或跨机器协作。
+
+## 阶段适用性
+
+- `deploymentMode: required` 要求执行部署工作流；`optional` 表示有目标时执行；`none` 适合不部署的库或脚本。
+- `observabilityMode: runtime` 要求运行信号和反馈；`feedback-only` 只要求反馈闭环；`none` 跳过阶段 9 及反馈日志检查。
+
+## 环境命令
+
+允许的键只有：`bootstrap`、`start`、`verify`、`e2e`、`health`、`cleanup`。
+
+```json
+{
+  "commands": {
+    "bootstrap": "npm ci",
+    "start": "npm run dev",
+    "verify": "npm test && npm run build",
+    "e2e": "npm run test:e2e",
+    "health": "curl --fail http://localhost:3000/health",
+    "cleanup": "npm run stop"
+  }
+}
+```
+
+`env check` 当前执行 `bootstrap`、`verify`、`e2e`、`health`；`start` 和 `cleanup` 供项目工作流显式使用。
+
+## ADR 主题
+
+```json
+{ "requiredAdrTopics": ["database", "authentication"] }
+```
+
+对应 ADR frontmatter：
+
+```md
+---
+topic: authentication
+---
+```
+
+## `feature_list.json.rules`
+
+```json
+{
+  "wip_limit_per_owner": 1,
+  "passing_requires_evidence": true,
+  "do_not_skip_verification": true,
+  "feature_should_fit_one_session": true,
+  "passing_is_monotonic": true,
+  "dependencies_must_be_passing_before_start": true
+}
+```
+
+`wip_limit_per_owner` 是实际执行的并发上限。`single_active_feature` 是已弃用别名；显式设置 WIP 时会忽略它。其余布尔值表达项目合同，但不能用来关闭核心 pass、dependency 和 monotonic 门禁。
+
+## Git 基线
+
+```bash
+HARNESS_BASE_REF=origin/main npx @caesarlo/sdlc-harness validate
+```
+
+[查看 `validate` 命令说明 →](/zh/reference/command-repository#validate)
+
+也支持 GitHub Actions 的 `GITHUB_BASE_REF`。没有可用 Git 基线时回退到 `.harness/last-validated-features.json`；该文件是派生缓存，不应提交。
+
+更多状态字段见 [`feature_list.json` 参考](/zh/reference/feature-list)。
+

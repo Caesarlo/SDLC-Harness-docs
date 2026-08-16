@@ -1,0 +1,44 @@
+---
+title: "使用技巧"
+description: "让开发者和编码 Agent 更稳定地使用 SDLC Harness。"
+icon: "lightbulb"
+---
+
+## 规划与选择
+
+- 让一个功能能在一次 Agent 会话内独立实现和验证；过大时先拆分。
+- 用可观察结果写 `behavior`，不要写内部实现步骤。
+- 用较小的 `priority` 表示更高优先级，配合 `claim --next` 自动选取 ready 工作。
+- 每次开始先看 `status`，不要根据上次聊天记忆猜当前状态。
+- 高风险、跨边界或难以逆转的改变先补 ADR。
+
+## 验证与证据
+
+- verification 使用确定、可重复、返回可靠退出码的命令。
+- 一个验证项只链接它真正证明的验收标准。
+- 自动检查用 `verify`；键盘体验、视觉确认等人工判断声明为 manual 并用 `evidence manual`。
+- 代码改变后重新验证；最新验证之后再记录评审。
+- 制品获批后如有任何内容变化，主动重新记录 approval。
+
+## 协作
+
+- Solo 模式通常不需要调用低层 `claim` 命令，但 `feature start` 仍会建立工作所需的生命周期 claim。
+- owner 表示责任归属，actor 用来区分同一 owner 下的不同 Agent 会话。
+- 长任务在租约过期前 `claim renew`，不要让活跃工作被误判为可接管。
+- 并行 Agent 使用独立 workspace，并让每个 workspace 对应一个功能。
+- 评审者与 claim owner 分离，避免实现者自证完成。
+
+## 会话与 Git
+
+- 会话结束运行 `session close`，把失败检查、未提交文件和下一步写进交接。
+- 提交 `feature_list.json`、审计事件和协议文档；不要提交本地快照与 `.worktrees/`。
+- 跨机器 claim 使用 `--push`，普通本地 claim 不能提供实时分布式锁。
+- workspace remove 或 prune 前确认工作已提交并推送；不要把 `--force` 当作常规清理选项。
+
+## 不要直接手改的字段
+
+claim、workspace、测试/评审证据和生命周期状态应由 CLI 维护。手改可能绕过 owner、commit、时间顺序、WIP 和并发写入检查，留下表面合法但无法可信复现的状态。
+
+<Tip>
+  给 Agent 的完成要求可以固定为：展示 `verify`、`review record`、`feature complete`、`validate` 和 `session close` 的结果，并说明任何仍未完成的项目。
+</Tip>

@@ -1,0 +1,91 @@
+---
+title: "Claim 与租约命令"
+description: "claim、renew、takeover、push 和 release 的参数与选择规则。"
+icon: "user-lock"
+---
+
+Claim 保证一个功能在租约有效期内只有一个责任主体。`--next`、`--takeover-expired` 和 `--push` 是不同执行模式，请不要组合使用。
+
+## `claim` {#claim}
+
+认领指定功能。
+
+```bash
+npx @caesarlo/sdlc-harness claim <feature-id> \
+  [--owner <name>] [--actor <id>] [--ttl <minutes>]
+```
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- |
+| `<feature-id>` | string | 是 | — | 要认领的功能 ID。 |
+| `--owner` | string | 否 | `defaultOwner` | claim owner，并参与 WIP 限制。 |
+| `--actor` | string | 否 | owner | 具体 Agent 或会话标识。 |
+| `--ttl` | number | 否 | `120` | 从当前时间开始计算的租约分钟数；当前 CLI 尚未强制校验正整数。 |
+
+如果已有未过期 claim，命令失败。认领 `not_started` 功能会把它设置为 `in_progress`。
+
+## `claim --next` {#next}
+
+自动选择一个可认领功能。
+
+```bash
+npx @caesarlo/sdlc-harness claim --next \
+  [--owner <name>] [--actor <id>] [--ttl <minutes>]
+```
+
+`--next` 只选择状态为 `not_started`、没有有效 claim、依赖均为 `passing` 的功能。priority 数值较小者优先；相同 priority 或没有 priority 时保持列表顺序。
+
+## `claim renew` {#renew}
+
+从当前时间重新计算现有 claim 的租约截止时间。
+
+```bash
+npx @caesarlo/sdlc-harness claim renew <feature-id> \
+  [--owner <name>] [--ttl <minutes>]
+```
+
+功能必须已有 claim；显式 owner 必须与当前 claim owner 相同。`--ttl` 默认 `120` 分钟。
+
+## `claim --takeover-expired` {#takeover-expired}
+
+接管已经过期的 claim。
+
+```bash
+npx @caesarlo/sdlc-harness claim <feature-id> --takeover-expired \
+  [--owner <name>] [--actor <id>] [--ttl <minutes>]
+```
+
+功能必须已有 claim 且租约已经到期。命令会保留原 owner 作为 `taken_over_from` 并建立新 claim。
+
+## `claim --push` {#push}
+
+认领功能、提交 claim 变更并推送到远端。
+
+```bash
+npx @caesarlo/sdlc-harness claim <feature-id> --push \
+  [--owner <name>] [--actor <id>] [--ttl <minutes>] \
+  [--remote <name>] [--branch <branch>]
+```
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- |
+| `--remote` | string | 否 | `origin` | 推送和冲突同步使用的 Git remote。 |
+| `--branch` | string | 否 | `main` | 推送目标分支。 |
+
+远端已经先认领该功能时，命令会同步远端状态并尝试认领下一个 ready 功能。
+
+## `release` {#release}
+
+释放 claim。
+
+```bash
+npx @caesarlo/sdlc-harness release <feature-id> [--owner <name>]
+```
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- |
+| `<feature-id>` | string | 是 | — | 要释放 claim 的功能 ID。重复释放是无操作。 |
+| `--owner` | string | 否 | `defaultOwner` | 有 claim 时必须与当前 owner 相同。 |
+
+释放后清除 claim；功能处于 `in_progress` 时恢复为 `not_started`。
+

@@ -1,10 +1,10 @@
 ---
-title: "Workspace 命令"
-description: "创建、查看、移除和清理 Git worktree workspace。"
+title: "Workspace commands"
+description: "Create, inspect, remove, and prune Git worktree workspaces."
 icon: "code-branch"
 ---
 
-Workspace 使用 Git worktree 为功能创建隔离目录和 `feature/<feature-id>` 分支。
+Workspaces use Git worktrees to create an isolated directory and a `feature/<feature-id>` branch for a feature.
 
 ## `workspace create` {#create}
 
@@ -12,12 +12,12 @@ Workspace 使用 Git worktree 为功能创建隔离目录和 `feature/<feature-i
 npx @caesarlo/sdlc-harness workspace create <feature-id> [--base <branch>]
 ```
 
-| 参数 | 类型 | 必填 | 默认值 | 说明 |
+| Argument | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `<feature-id>` | string | 是 | — | 必须持有有效 claim 且尚无 workspace 的功能 ID。 |
-| `--base` | Git ref string | 否 | `main` | 新功能分支的基础分支或 ref，必须可由 Git 解析。 |
+| `<feature-id>` | string | Yes | — | Feature ID that has an active claim and no existing workspace. |
+| `--base` | Git ref string | No | `main` | Base branch or ref for the new feature branch. Git must be able to resolve it. |
 
-成功后创建 `.worktrees/<feature-id>`、`feature/<feature-id>` 分支，并把 workspace 元数据写入 `feature_list.json`。
+On success, the command creates `.worktrees/<feature-id>` and the `feature/<feature-id>` branch, then writes workspace metadata to `feature_list.json`.
 
 ## `workspace status` {#status}
 
@@ -25,7 +25,7 @@ npx @caesarlo/sdlc-harness workspace create <feature-id> [--base <branch>]
 npx @caesarlo/sdlc-harness workspace status
 ```
 
-该命令没有参数。它以 JSON 输出已登记 workspace 的路径、分支、基础提交、claim 是否有效以及目录是否仍存在，不修改仓库。
+This command has no arguments. It outputs JSON containing each registered workspace's path, branch, base commit, whether the claim is active, and whether the directory still exists. It does not modify the repository.
 
 ## `workspace remove` {#remove}
 
@@ -33,12 +33,12 @@ npx @caesarlo/sdlc-harness workspace status
 npx @caesarlo/sdlc-harness workspace remove <feature-id> [--force]
 ```
 
-| 参数 | 类型 | 必填 | 默认值 | 说明 |
+| Argument | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `<feature-id>` | string | 是 | — | 已登记 workspace 的功能 ID。 |
-| `--force` | boolean | 否 | `false` | 即使存在未提交修改或未推送 commit 也强制移除。 |
+| `<feature-id>` | string | Yes | — | Feature ID with a registered workspace. |
+| `--force` | boolean | No | `false` | Remove even when uncommitted changes or unpushed commits exist. |
 
-默认情况下，命令会保护未提交或未推送工作。成功移除 worktree、功能分支和 workspace 元数据。
+By default, the command protects uncommitted and unpushed work. On success, it removes the worktree, feature branch, and workspace metadata.
 
 ## `workspace prune` {#prune}
 
@@ -46,4 +46,4 @@ npx @caesarlo/sdlc-harness workspace remove <feature-id> [--force]
 npx @caesarlo/sdlc-harness workspace prune [--force]
 ```
 
-只考虑 claim 已释放或过期的 workspace；有效 claim 对应的 workspace 永远跳过。默认跳过有未提交或未推送工作的目录，`--force` 会强制移除这些目录。
+The command considers only workspaces whose claims have been released or expired. It always skips workspaces with active claims. By default, it also skips directories with uncommitted or unpushed work. `--force` removes those directories as well.

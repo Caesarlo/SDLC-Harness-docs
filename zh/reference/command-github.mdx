@@ -1,0 +1,29 @@
+---
+title: "GitHub 命令"
+description: "provider github check 的参数、权限和结论。"
+icon: "github"
+---
+
+## `provider github check` {#check}
+
+检查 GitHub 仓库是否启用了 SDLC Harness 所需的保护措施。
+
+```bash
+npx @caesarlo/sdlc-harness provider github check \
+  [--owner <github-owner>] [--repo <github-repo>] [--branch <branch>]
+```
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- |
+| `--owner` | string | 条件必填 | 从 `origin` 推断 | GitHub 仓库 owner。无法推断时必须提供。 |
+| `--repo` | string | 条件必填 | 从 `origin` 推断 | GitHub 仓库名。无法推断时必须提供。 |
+| `--branch` | string | 否 | `main` | 要检查保护规则的分支。 |
+
+本机必须安装并认证 `gh` CLI。输出中的结论含义：
+
+- `PASS`：该项配置符合要求。
+- `FAIL`：已确认配置不符合要求，命令返回非零。
+- `UNKNOWN`：token 权限不足，无法确认；作为警告而不是失败。
+
+这个命令只检查 GitHub 仓库配置，不运行功能验证，也不替代 `validate`。
+
