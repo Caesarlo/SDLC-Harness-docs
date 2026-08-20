@@ -10,12 +10,19 @@ icon: "terminal"
 npx @caesarlo/sdlc-harness --help
 ```
 
+每个子命令自身也接受 `-h`/`--help`——出现在参数任意位置都生效，不必是第一个参数——命中后会打印该命令自己的用法说明，而不是真的执行它。
+
+```bash
+npx @caesarlo/sdlc-harness feature --help
+npx @caesarlo/sdlc-harness milestone archive -h
+```
+
 <CardGroup cols={2}>
   <Card title="仓库与审核" icon="folder-check" href="/zh/reference/command-repository" cta="查看参数" arrow>
     接入 Harness、审核仓库并读取状态与追溯矩阵。
   </Card>
   <Card title="规划" icon="list-check" href="/zh/reference/command-planning" cta="查看参数" arrow>
-    里程碑仅交互创建；功能可交互创建或从 JSON 导入。
+    里程碑仅交互创建；功能可交互创建或从 JSON 导入；归档已完成的里程碑。
   </Card>
   <Card title="功能生命周期" icon="diagram-project" href="/zh/reference/command-feature" cta="查看参数" arrow>
     启动、完成、阻塞和重新打开功能。
@@ -56,6 +63,8 @@ npx @caesarlo/sdlc-harness --help
 | --- | --- | --- |
 | `new-feature [--input <path>]` | 交互创建功能，或从仓库内 JSON 文件导入 | [查看 `new-feature` 参数 →](/zh/reference/command-planning#new-feature) |
 | `new-milestone` | 交互创建里程碑 | [查看 `new-milestone` 说明 →](/zh/reference/command-planning#new-milestone) |
+| `milestone archive <milestone-id>` | 把全部功能已 passing 的里程碑连同其功能移入 `.harness/archive/<milestone-id>.json` | [查看 `milestone archive` 参数 →](/zh/reference/command-planning#milestone-archive) |
+| `milestone list-archived` | 以 JSON 列出已归档的里程碑 | [查看 `milestone list-archived` 说明 →](/zh/reference/command-planning#milestone-list-archived) |
 
 ## 功能生命周期
 

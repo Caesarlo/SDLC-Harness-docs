@@ -38,6 +38,16 @@ npx @caesarlo/sdlc-harness new-feature --input .harness-input/feature.json
 
 Input cannot inject a claim, workspace, evidence, or completed state. A feature should describe observable behavior, contain at least one verification, and connect to requirements, user stories, acceptance criteria, or ADRs through `source_refs`.
 
+Before planning the next milestone, archive the previous one once every feature in it is `passing`, so `feature_list.json` starts the new requirement cycle lean instead of accumulating every milestone the repository has ever had:
+
+```bash
+npx @caesarlo/sdlc-harness milestone archive M1 --actor alice
+```
+
+[See the `milestone archive` options →](/reference/command-planning#milestone-archive)
+
+Archived features keep satisfying dependencies and traceability coverage for the milestones that follow, so archiving never blocks or invalidates new work — see [Archiving milestones](/reference/feature-list#archiving-milestones).
+
 ## 3. Start: select ready work
 
 The unified lifecycle command is recommended:

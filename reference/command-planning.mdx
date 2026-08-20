@@ -1,6 +1,6 @@
 ---
 title: "Planning commands"
-description: "Inputs, constraints, and examples for new-feature and new-milestone."
+description: "Inputs, constraints, and examples for new-feature, new-milestone, and milestone archiving."
 icon: "list-check"
 ---
 
@@ -32,3 +32,29 @@ npx @caesarlo/sdlc-harness new-milestone
 ```
 
 This command has no CLI arguments. It prompts for the milestone ID, title, and objective. The ID must be unique. On success, it appends the milestone to `feature_list.json`.
+
+## `milestone archive` {#milestone-archive}
+
+Move a completed milestone, and every feature in it, out of `feature_list.json` into `.harness/archive/<milestone-id>.json`.
+
+```bash
+npx @caesarlo/sdlc-harness milestone archive M1 --actor alice
+```
+
+| Argument | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `--actor` | string | No | `harness.config.json.defaultOwner` | Identity recorded as `archived_by` in the archive file and the `milestone.archived` audit event. |
+
+Every feature in the milestone must already be `passing`; the command refuses and lists the blocking features otherwise, without changing anything. The archive file is written before the milestone is removed from `feature_list.json`, so an interrupted run can leave a duplicate archive record but never loses the milestone's data.
+
+Archived features are not deleted from the project's history — they still satisfy dependencies for new features (`claim`, `feature start`, `dependency-cycles`), and `traceability` still counts them as covering their requirements, stories, and acceptance criteria. Archiving only relocates completed work so a new milestone starts from a lean `feature_list.json`; it never invalidates what already shipped. See [Archiving milestones](/reference/feature-list#archiving-milestones) for the archive file's shape.
+
+## `milestone list-archived` {#milestone-list-archived}
+
+List archived milestones.
+
+```bash
+npx @caesarlo/sdlc-harness milestone list-archived
+```
+
+This command has no arguments and does not modify the repository. It prints a JSON array with each archived milestone's `id`, `title`, feature count, and `archived_at`/`archived_by`.

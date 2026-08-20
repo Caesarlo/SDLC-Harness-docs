@@ -1,6 +1,6 @@
 ---
 title: "规划命令"
-description: "new-feature 和 new-milestone 的输入、约束与示例。"
+description: "new-feature、new-milestone 和里程碑归档的输入、约束与示例。"
 icon: "list-check"
 ---
 
@@ -32,3 +32,29 @@ npx @caesarlo/sdlc-harness new-milestone
 ```
 
 该命令没有 CLI 参数。它交互询问里程碑 ID、标题和目标。ID 必须唯一；成功后向 `feature_list.json` 追加里程碑。
+
+## `milestone archive` {#milestone-archive}
+
+把一个已完成的里程碑及其全部功能从 `feature_list.json` 移入 `.harness/archive/<milestone-id>.json`。
+
+```bash
+npx @caesarlo/sdlc-harness milestone archive M1 --actor alice
+```
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- |
+| `--actor` | string | 否 | `harness.config.json.defaultOwner` | 记录到归档文件的 `archived_by` 字段和 `milestone.archived` 审计事件中的身份标识。 |
+
+该里程碑下的每个功能都必须已经是 `passing`；否则命令会拒绝执行并列出阻塞的功能，不会做任何改动。归档文件会在里程碑从 `feature_list.json` 移除之前写入，因此中途中断最多留下重复的归档记录，绝不会丢失里程碑数据。
+
+已归档的功能不会从项目历史中消失——它们仍然满足新功能的依赖检查（`claim`、`feature start`、`dependency-cycles`），`traceability` 也仍会把它们计入对应需求、用户故事和验收标准的覆盖。归档只是把已完成的工作挪个地方存放，让新里程碑从一份精简的 `feature_list.json` 开始，绝不会使已交付的成果失效。归档文件的结构见 [归档里程碑](/zh/reference/feature-list#archiving-milestones)。
+
+## `milestone list-archived` {#milestone-list-archived}
+
+列出已归档的里程碑。
+
+```bash
+npx @caesarlo/sdlc-harness milestone list-archived
+```
+
+该命令没有参数，也不会修改仓库。它输出一个 JSON 数组，包含每个已归档里程碑的 `id`、`title`、功能数量和 `archived_at`/`archived_by`。

@@ -38,6 +38,16 @@ npx @caesarlo/sdlc-harness new-feature --input .harness-input/feature.json
 
 输入不能注入 claim、workspace、证据或已完成状态。功能应描述可观察行为，包含至少一个 verification，并通过 `source_refs` 连接需求、用户故事、验收标准或 ADR。
 
+规划下一个里程碑之前，先把上一个里程碑（其下全部功能都已 `passing`）归档，让新的需求周期从一份精简的 `feature_list.json` 开始，而不是让仓库积累历史上出现过的每一个里程碑：
+
+```bash
+npx @caesarlo/sdlc-harness milestone archive M1 --actor alice
+```
+
+[查看 `milestone archive` 参数说明 →](/zh/reference/command-planning#milestone-archive)
+
+已归档的功能仍会满足后续里程碑的依赖检查和追溯覆盖，所以归档不会阻塞新工作，也不会让已交付的成果失效——详见[归档里程碑](/zh/reference/feature-list#archiving-milestones)。
+
 ## 3. 开始：选择 ready 工作
 
 推荐使用统一生命周期入口：

@@ -10,12 +10,19 @@ Run every command from the target repository root. This page omits the repeated 
 npx @caesarlo/sdlc-harness --help
 ```
 
+Every subcommand also accepts `-h`/`--help` — anywhere among its arguments, not just first — and prints that command's own usage instead of running it.
+
+```bash
+npx @caesarlo/sdlc-harness feature --help
+npx @caesarlo/sdlc-harness milestone archive -h
+```
+
 <CardGroup cols={2}>
   <Card title="Repository and governance" icon="folder-check" href="/reference/command-repository" cta="View arguments" arrow>
     Install Harness, audit the repository, and read status and traceability matrices.
   </Card>
   <Card title="Planning" icon="list-check" href="/reference/command-planning" cta="View arguments" arrow>
-    Create milestones interactively; create features interactively or import them from JSON.
+    Create milestones interactively; create features interactively or import them from JSON; archive completed milestones.
   </Card>
   <Card title="Feature lifecycle" icon="diagram-project" href="/reference/command-feature" cta="View arguments" arrow>
     Start, complete, block, and reopen features.
@@ -56,6 +63,8 @@ npx @caesarlo/sdlc-harness --help
 | --- | --- | --- |
 | `new-feature [--input <path>]` | Create a feature interactively or import it from a JSON file in the repository. | [View `new-feature` arguments →](/reference/command-planning#new-feature) |
 | `new-milestone` | Create a milestone interactively. | [View `new-milestone` details →](/reference/command-planning#new-milestone) |
+| `milestone archive <milestone-id>` | Move a fully-passing milestone and its features to `.harness/archive/<milestone-id>.json`. | [View `milestone archive` arguments →](/reference/command-planning#milestone-archive) |
+| `milestone list-archived` | List archived milestones as JSON. | [View `milestone list-archived` details →](/reference/command-planning#milestone-list-archived) |
 
 ## Feature lifecycle
 

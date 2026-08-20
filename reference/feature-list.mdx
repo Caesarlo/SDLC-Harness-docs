@@ -67,6 +67,21 @@ The related commands use compare-and-swap atomic writes. When they detect concur
 
 Common `kind` values for feature evidence include test, manual, and review. Records contain results and timestamps plus the relevant command, verification index, reviewer, actor, notes, or CI metadata. Top-level project evidence is used for artifact approval and additionally stores the artifact and content hash.
 
+## Archiving milestones {#archiving-milestones}
+
+`milestone archive` (see the [Planning commands reference](/reference/command-planning#milestone-archive)) moves a fully-`passing` milestone, and its features, out of `feature_list.json` into `.harness/archive/<milestone-id>.json`:
+
+```json
+{
+  "milestone": { "id": "M1", "title": "…", "objective": "…" },
+  "features": [ /* the milestone's feature objects, unchanged */ ],
+  "archived_at": "2026-08-20T03:07:12.440Z",
+  "archived_by": "alice"
+}
+```
+
+Archived feature IDs are not gone from the project's record: `claim`, `feature start`, and dependency-cycle checks still treat them as satisfied ("passing") dependencies, and `traceability` still counts them toward the requirements, stories, and acceptance criteria they covered. Archiving is a storage move for completed work, not a way to drop it — it keeps `feature_list.json` focused on the current and upcoming milestones without losing history or breaking anything that depended on the archived work.
+
 <Warning>
   Passing JSON Schema validation only means the structure is valid. `validate` semantic auditors still check dependency order, WIP, evidence freshness, independent review, source references, and traceability completeness.
 </Warning>

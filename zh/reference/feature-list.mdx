@@ -67,6 +67,21 @@ icon: "rectangle-list"
 
 功能证据常见 `kind` 包括 test、manual 和 review。它们记录结果、时间及对应的命令、verification 索引、reviewer、actor、notes 或 CI 元数据。项目顶层 evidence 用于制品审批并额外保存 artifact 和内容哈希。
 
+## 归档里程碑 {#archiving-milestones}
+
+`milestone archive`（见[规划命令参考](/zh/reference/command-planning#milestone-archive)）会把一个全部功能已 `passing` 的里程碑连同其功能，从 `feature_list.json` 移入 `.harness/archive/<milestone-id>.json`：
+
+```json
+{
+  "milestone": { "id": "M1", "title": "…", "objective": "…" },
+  "features": [ /* 该里程碑的功能对象，原样保留 */ ],
+  "archived_at": "2026-08-20T03:07:12.440Z",
+  "archived_by": "alice"
+}
+```
+
+已归档的功能 ID 并未从项目记录中消失：`claim`、`feature start` 和依赖环检查仍会把它们当作已满足（"passing"）的依赖，`traceability` 也仍会把它们计入曾经覆盖的需求、用户故事和验收标准。归档只是把已完成的工作挪个存放位置，而不是丢弃它——既能让 `feature_list.json` 聚焦在当前和即将到来的里程碑上，又不会丢失历史，也不会破坏依赖了这部分工作的任何东西。
+
 <Warning>
   JSON Schema 通过只代表结构合法。依赖顺序、WIP、证据时效、独立评审、来源引用和追溯完整性仍由 `validate` 的语义审核器检查。
 </Warning>

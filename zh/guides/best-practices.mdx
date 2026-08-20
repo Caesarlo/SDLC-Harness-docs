@@ -11,6 +11,7 @@ icon: "lightbulb"
 - 用较小的 `priority` 表示更高优先级，配合 `claim --next` 自动选取 ready 工作。
 - 每次开始先看 `status`，不要根据上次聊天记忆猜当前状态。
 - 高风险、跨边界或难以逆转的改变先补 ADR。
+- 一个里程碑下全部功能都 `passing` 后，在规划下一个里程碑前先运行 `milestone archive`，让 `feature_list.json` 保持聚焦在当前工作上，而不是不断累积每一个已完成的里程碑。
 
 ## 验证与证据
 
